@@ -9,23 +9,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryBlueLight,
-    onPrimary = Color.Black,
+    primary = PrimaryBlue,
+    onPrimary = Color.White,
     primaryContainer = PrimaryBlueDark,
     onPrimaryContainer = Color.White,
 
-    secondary = SecondaryTealLight,
-    onSecondary = Color.Black,
+    secondary = SecondaryTeal,
+    onSecondary = Color(0xFF071017),
     secondaryContainer = SecondaryTealDark,
     onSecondaryContainer = Color.White,
 
-    tertiary = SuccessGreenLight,
-    onTertiary = Color.Black,
+    tertiary = SuccessGreen,
+    onTertiary = Color.White,
     tertiaryContainer = SuccessGreenDark,
     onTertiaryContainer = Color.White,
 
-    error = ErrorCoralLight,
-    onError = Color.Black,
+    error = ErrorCoral,
+    onError = Color.White,
     errorContainer = ErrorCoralDark,
     onErrorContainer = Color.White,
 
@@ -37,20 +37,20 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = DarkSurfaceVariant,
     onSurfaceVariant = DarkTextSecondary,
 
-    outline = Color(0xFF5F6368),
-    outlineVariant = Color(0xFF3C4043)
+    outline = Color(0xFF3D4048),
+    outlineVariant = Color(0xFF2A2C33)
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlue,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD6E3FF),
-    onPrimaryContainer = PrimaryBlueDark,
+    primaryContainer = Color(0xFFD7E8FF),
+    onPrimaryContainer = Color(0xFF0A2540),
 
     secondary = SecondaryTeal,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFB2DFDB),
-    onSecondaryContainer = SecondaryTealDark,
+    onSecondary = Color(0xFF003248),
+    secondaryContainer = Color(0xFFD4F1FF),
+    onSecondaryContainer = Color(0xFF00405C),
 
     tertiary = SuccessGreen,
     onTertiary = Color.White,
@@ -70,8 +70,8 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = TextSecondary,
 
-    outline = Color(0xFFDADCE0),
-    outlineVariant = Color(0xFFE8EAED)
+    outline = Color(0xFFD7D9DE),
+    outlineVariant = Color(0xFFEEF0F4)
 )
 
 @Composable
@@ -89,6 +89,7 @@ fun MemoryHelperTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }

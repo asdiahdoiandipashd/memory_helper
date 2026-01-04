@@ -22,22 +22,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,7 +42,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +53,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.memoryhelper.MemoryHelperApplication
 import com.example.memoryhelper.R
+import com.example.memoryhelper.ui.designsystem.AppCard
+import com.example.memoryhelper.ui.designsystem.AppCardTone
+import com.example.memoryhelper.ui.designsystem.AppSpacing
+import com.example.memoryhelper.ui.designsystem.AppTopBar
+import com.example.memoryhelper.ui.designsystem.PrimaryButton
+import com.example.memoryhelper.ui.designsystem.SecondaryButton
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,7 +96,7 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AppTopBar(
                 title = { Text("设置") }
             )
         },
@@ -107,8 +107,8 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(AppSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.lg)
         ) {
             // Section header
             Text(
@@ -125,13 +125,10 @@ fun SettingsScreen(
             )
 
             // Permission cards
-            Card(
+            AppCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
+                tone = AppCardTone.Surface
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
                     // 1. Notification Permission
                     PermissionItem(
                         title = "通知权限",
@@ -147,7 +144,7 @@ fun SettingsScreen(
                         }
                     )
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = AppSpacing.sm))
 
                     // 2. Exact Alarm Permission
                     PermissionItem(
@@ -160,7 +157,7 @@ fun SettingsScreen(
                         }
                     )
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = AppSpacing.sm))
 
                     // 3. Battery Optimization Whitelist (CRUCIAL)
                     PermissionItem(
@@ -173,10 +170,9 @@ fun SettingsScreen(
                             requestBatteryOptimizationWhitelist(context)
                         }
                     )
-                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
 
             // Section header for testing
             Text(
@@ -187,24 +183,19 @@ fun SettingsScreen(
             )
 
             // Test notification card
-            Card(
+            AppCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
+                tone = AppCardTone.Surface
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Notifications,
+                            imageVector = Icons.Rounded.Notifications,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(AppSpacing.sm))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "测试通知",
@@ -219,26 +210,24 @@ fun SettingsScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.sm))
 
-                    Button(
+                    PrimaryButton(
+                        text = "发送测试通知",
                         onClick = {
                             sendTestNotification(context)
                             viewModel.onTestNotificationSent()
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("发送测试通知")
-                    }
-                }
+                    )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
 
             // Backup & Restore Section
             BackupRestoreSection(viewModel = viewModel)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
 
             // Tips section
             Text(
@@ -248,15 +237,12 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Card(
+            AppCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                )
+                tone = AppCardTone.Elevated
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.xs)
                 ) {
                     TipItem("部分手机厂商（如小米、华为、OPPO）有额外的后台管理设置，请在系统设置中将本应用设为「允许后台运行」")
                     TipItem("如果通知仍然不稳定，请尝试关闭系统的「省电模式」或将本应用添加到省电白名单")
@@ -265,7 +251,7 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.lg))
         }
     }
 }
@@ -286,17 +272,17 @@ private fun PermissionItem(
     ) {
         // Status icon
         Icon(
-            imageVector = if (isGranted) Icons.Default.CheckCircle else Icons.Default.Warning,
+            imageVector = if (isGranted) Icons.Rounded.CheckCircle else Icons.Rounded.Warning,
             contentDescription = null,
             tint = when {
-                isGranted -> Color(0xFF4CAF50) // Green
+                isGranted -> MaterialTheme.colorScheme.tertiary
                 isCritical -> MaterialTheme.colorScheme.error
                 else -> MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
             },
             modifier = Modifier.size(24.dp)
         )
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(AppSpacing.sm))
 
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -306,7 +292,7 @@ private fun PermissionItem(
                     fontWeight = FontWeight.Medium
                 )
                 if (isCritical && !isGranted) {
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(AppSpacing.xs))
                     Text(
                         text = "重要",
                         style = MaterialTheme.typography.labelSmall,
@@ -315,26 +301,26 @@ private fun PermissionItem(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.xxs))
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.xs))
 
             if (isRequired) {
                 if (isGranted) {
-                    OutlinedButton(
+                    SecondaryButton(
+                        text = buttonText,
                         onClick = onRequestPermission,
                         enabled = false
-                    ) {
-                        Text(buttonText)
-                    }
+                    )
                 } else {
-                    Button(onClick = onRequestPermission) {
-                        Text(buttonText)
-                    }
+                    PrimaryButton(
+                        text = buttonText,
+                        onClick = onRequestPermission
+                    )
                 }
             } else {
                 Text(
@@ -355,7 +341,7 @@ private fun TipItem(text: String) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSecondaryContainer
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(AppSpacing.xs))
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,

@@ -17,17 +17,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -35,11 +31,9 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,6 +51,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.memoryhelper.R
 import com.example.memoryhelper.data.local.entity.TodoTag
+import com.example.memoryhelper.ui.designsystem.AppCard
+import com.example.memoryhelper.ui.designsystem.AppCardTone
+import com.example.memoryhelper.ui.designsystem.AppSpacing
+import com.example.memoryhelper.ui.designsystem.AppTextField
+import com.example.memoryhelper.ui.designsystem.AppTopBar
+import com.example.memoryhelper.ui.designsystem.PrimaryButton
+import com.example.memoryhelper.ui.designsystem.SecondaryButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,9 +72,7 @@ fun TodoScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.todo_title)) }
-            )
+            AppTopBar(title = { Text(stringResource(R.string.todo_title)) })
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -84,7 +83,7 @@ fun TodoScreen(
                 shape = CircleShape
             ) {
                 Icon(
-                    imageVector = Icons.Default.Add,
+                    imageVector = Icons.Rounded.Add,
                     contentDescription = stringResource(R.string.todo_add_task)
                 )
             }
@@ -107,8 +106,8 @@ fun TodoScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
                 ) {
                     if (uiState.dailyTasks.isNotEmpty()) {
                         item {
@@ -197,17 +196,19 @@ fun TodoScreen(
             title = { Text(stringResource(R.string.todo_delete_task_title)) },
             text = { Text(stringResource(R.string.todo_delete_task_message)) },
             confirmButton = {
-                Button(onClick = {
-                    viewModel.deleteTask(item.task)
-                    deleteTaskTarget = null
-                }) {
-                    Text(stringResource(R.string.delete_action))
-                }
+                PrimaryButton(
+                    text = stringResource(R.string.delete_action),
+                    onClick = {
+                        viewModel.deleteTask(item.task)
+                        deleteTaskTarget = null
+                    }
+                )
             },
             dismissButton = {
-                Button(onClick = { deleteTaskTarget = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
+                SecondaryButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = { deleteTaskTarget = null }
+                )
             }
         )
     }
@@ -223,12 +224,12 @@ private fun TagFilterRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = AppSpacing.md, vertical = AppSpacing.xs),
         verticalAlignment = Alignment.CenterVertically
     ) {
         LazyRow(
             modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
         ) {
             item {
                 FilterChip(
@@ -247,7 +248,7 @@ private fun TagFilterRow(
         }
         IconButton(onClick = onManageTags) {
             Icon(
-                imageVector = Icons.Default.Edit,
+                imageVector = Icons.Rounded.Edit,
                 contentDescription = stringResource(R.string.todo_manage_tags)
             )
         }
@@ -260,7 +261,7 @@ private fun SectionHeader(text: String) {
         text = text,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(vertical = 4.dp)
+        modifier = Modifier.padding(vertical = AppSpacing.xxs)
     )
 }
 
@@ -279,16 +280,13 @@ private fun TodoTaskCard(
         TextStyle(textDecoration = textDecoration)
     )
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    val cardTone = if (item.isCompleted) AppCardTone.Surface else AppCardTone.Elevated
+    AppCard(
+        tone = cardTone,
+        padding = PaddingValues(AppSpacing.sm)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
@@ -298,7 +296,7 @@ private fun TodoTaskCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 8.dp)
+                    .padding(start = AppSpacing.xs)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -310,7 +308,7 @@ private fun TodoTaskCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     if (item.task.isDaily) {
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(AppSpacing.xs))
                         AssistChip(
                             onClick = {},
                             label = { Text(stringResource(R.string.todo_daily_label)) }
@@ -318,7 +316,7 @@ private fun TodoTaskCard(
                     }
                 }
                 if (item.task.note.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.xxs))
                     Text(
                         text = item.task.note,
                         style = noteStyle,
@@ -327,10 +325,10 @@ private fun TodoTaskCard(
                     )
                 }
                 if (item.tags.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.xs))
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.xxs)
                     ) {
                         item.tags.forEach { tag ->
                             AssistChip(
@@ -346,13 +344,13 @@ private fun TodoTaskCard(
             ) {
                 IconButton(onClick = onEdit) {
                     Icon(
-                        imageVector = Icons.Default.Edit,
+                        imageVector = Icons.Rounded.Edit,
                         contentDescription = stringResource(R.string.todo_edit_task)
                     )
                 }
                 IconButton(onClick = onDelete) {
                     Icon(
-                        imageVector = Icons.Default.Delete,
+                        imageVector = Icons.Rounded.Delete,
                         contentDescription = stringResource(R.string.delete_action)
                     )
                 }
@@ -366,22 +364,22 @@ private fun EmptyState() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(AppSpacing.xl),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                imageVector = Icons.Outlined.CheckCircle,
+                imageVector = Icons.Rounded.CheckCircle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
             Text(
                 text = stringResource(R.string.todo_empty_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.xxs))
             Text(
                 text = stringResource(R.string.todo_empty_body),
                 style = MaterialTheme.typography.bodyMedium
@@ -412,18 +410,18 @@ private fun TaskDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)) {
+                AppTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text(stringResource(R.string.todo_task_title_hint)) },
+                    label = stringResource(R.string.todo_task_title_hint),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
+                AppTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text(stringResource(R.string.todo_task_note_hint)) },
+                    label = stringResource(R.string.todo_task_note_hint),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(
@@ -445,7 +443,7 @@ private fun TaskDialog(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {
                         items(tags) { tag ->
                             val selected = selectedTagIds.contains(tag.id)
                             FilterChip(
@@ -465,17 +463,17 @@ private fun TaskDialog(
             }
         },
         confirmButton = {
-            Button(
+            PrimaryButton(
+                text = stringResource(R.string.save),
                 onClick = { onSave(title.trim(), note.trim(), isDaily, selectedTagIds.toList()) },
                 enabled = title.trim().isNotBlank()
-            ) {
-                Text(stringResource(R.string.save))
-            }
+            )
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            SecondaryButton(
+                text = stringResource(R.string.cancel),
+                onClick = onDismiss
+            )
         }
     )
 }
@@ -497,15 +495,16 @@ private fun TagManagerDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.todo_manage_tags)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)) {
+                AppTextField(
                     value = newTagName,
                     onValueChange = { newTagName = it },
-                    label = { Text(stringResource(R.string.todo_tag_name_hint)) },
+                    label = stringResource(R.string.todo_tag_name_hint),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Button(
+                PrimaryButton(
+                    text = stringResource(R.string.todo_add_tag),
                     onClick = {
                         val trimmed = newTagName.trim()
                         if (trimmed.isNotEmpty()) {
@@ -514,16 +513,14 @@ private fun TagManagerDialog(
                         }
                     },
                     enabled = newTagName.trim().isNotBlank()
-                ) {
-                    Text(stringResource(R.string.todo_add_tag))
-                }
+                )
                 if (tags.isEmpty()) {
                     Text(
                         text = stringResource(R.string.todo_no_tags),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.xxs)) {
                         tags.forEach { tag ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -539,13 +536,13 @@ private fun TagManagerDialog(
                                     renameValue = tag.name
                                 }) {
                                     Icon(
-                                        imageVector = Icons.Default.Edit,
+                                        imageVector = Icons.Rounded.Edit,
                                         contentDescription = stringResource(R.string.rename)
                                     )
                                 }
                                 IconButton(onClick = { deleteTarget = tag }) {
                                     Icon(
-                                        imageVector = Icons.Default.Delete,
+                                        imageVector = Icons.Rounded.Delete,
                                         contentDescription = stringResource(R.string.delete_action)
                                     )
                                 }
@@ -556,9 +553,10 @@ private fun TagManagerDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(R.string.confirm))
-            }
+            PrimaryButton(
+                text = stringResource(R.string.confirm),
+                onClick = onDismiss
+            )
         }
     )
 
@@ -567,16 +565,17 @@ private fun TagManagerDialog(
             onDismissRequest = { renameTarget = null },
             title = { Text(stringResource(R.string.todo_rename_tag)) },
             text = {
-                OutlinedTextField(
+                AppTextField(
                     value = renameValue,
                     onValueChange = { renameValue = it },
-                    label = { Text(stringResource(R.string.todo_tag_name_hint)) },
+                    label = stringResource(R.string.todo_tag_name_hint),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
-                Button(
+                PrimaryButton(
+                    text = stringResource(R.string.save),
                     onClick = {
                         val trimmed = renameValue.trim()
                         if (trimmed.isNotEmpty()) {
@@ -585,14 +584,13 @@ private fun TagManagerDialog(
                         }
                     },
                     enabled = renameValue.trim().isNotBlank()
-                ) {
-                    Text(stringResource(R.string.save))
-                }
+                )
             },
             dismissButton = {
-                Button(onClick = { renameTarget = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
+                SecondaryButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = { renameTarget = null }
+                )
             }
         )
     }
@@ -603,17 +601,19 @@ private fun TagManagerDialog(
             title = { Text(stringResource(R.string.todo_delete_tag_title)) },
             text = { Text(stringResource(R.string.todo_delete_tag_message)) },
             confirmButton = {
-                Button(onClick = {
-                    onDeleteTag(tag)
-                    deleteTarget = null
-                }) {
-                    Text(stringResource(R.string.delete_action))
-                }
+                PrimaryButton(
+                    text = stringResource(R.string.delete_action),
+                    onClick = {
+                        onDeleteTag(tag)
+                        deleteTarget = null
+                    }
+                )
             },
             dismissButton = {
-                Button(onClick = { deleteTarget = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
+                SecondaryButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = { deleteTarget = null }
+                )
             }
         )
     }

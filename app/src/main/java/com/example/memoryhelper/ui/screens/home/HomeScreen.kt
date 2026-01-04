@@ -29,23 +29,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.DateRange
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -56,7 +52,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
@@ -64,8 +59,6 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,6 +85,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.memoryhelper.R
 import com.example.memoryhelper.data.local.entity.MemoryItem
 import com.example.memoryhelper.data.local.entity.MemoryItemStatus
+import com.example.memoryhelper.ui.designsystem.AppCard
+import com.example.memoryhelper.ui.designsystem.AppCardTone
+import com.example.memoryhelper.ui.designsystem.AppListItem
+import com.example.memoryhelper.ui.designsystem.AppSpacing
+import com.example.memoryhelper.ui.designsystem.AppTextField
+import com.example.memoryhelper.ui.designsystem.AppTopBar
+import com.example.memoryhelper.ui.designsystem.PrimaryButton
+import com.example.memoryhelper.ui.designsystem.SecondaryButton
 import com.example.memoryhelper.ui.theme.PrimaryBlue
 import com.example.memoryhelper.ui.theme.SecondaryTeal
 import com.example.memoryhelper.ui.theme.SuccessGreen
@@ -122,12 +123,13 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             if (isSearchExpanded) {
-                TopAppBar(
+                AppTopBar(
                     title = {
-                        OutlinedTextField(
+                        AppTextField(
                             value = searchQuery,
                             onValueChange = { viewModel.updateSearchQuery(it) },
-                            placeholder = { Text(stringResource(R.string.search_hint)) },
+                            label = stringResource(R.string.search),
+                            placeholder = stringResource(R.string.search_hint),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -137,13 +139,9 @@ fun HomeScreen(
                             viewModel.clearSearch()
                             isSearchExpanded = false
                         }) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.close))
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface
-                    )
+                    }
                 )
             }
         },
@@ -161,7 +159,7 @@ fun HomeScreen(
                 shape = CircleShape
             ) {
                 Icon(
-                    imageVector = Icons.Default.Add,
+                    imageVector = Icons.Rounded.Add,
                     contentDescription = stringResource(R.string.add_item_desc),
                     modifier = Modifier.size(28.dp)
                 )
@@ -182,8 +180,8 @@ fun HomeScreen(
             // Notebook Filter Bar
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(horizontal = AppSpacing.md, vertical = AppSpacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
             ) {
                 item {
                     FilterChip(
@@ -218,7 +216,7 @@ fun HomeScreen(
                 }
                 item {
                     IconButton(onClick = { showAddNotebookDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_notebook))
+                        Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.add_notebook))
                     }
                 }
             }
@@ -242,8 +240,8 @@ fun HomeScreen(
                 // Search mode: flat list
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(AppSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.xs)
                 ) {
                 items(
                     items = uiState.allItems,
@@ -265,8 +263,8 @@ fun HomeScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    contentPadding = PaddingValues(AppSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
                 ) {
                 // Start Review Button - Modern gradient style
                 if (uiState.hasAnyDueItems) {
@@ -275,24 +273,19 @@ fun HomeScreen(
                             it.nextReviewTime <= System.currentTimeMillis()
                         }.size
 
-                        ElevatedCard(
+                        AppCard(
                             modifier = Modifier.fillMaxWidth(),
+                            tone = AppCardTone.Accent,
                             onClick = {
                                 val dueItems = uiState.overdueItems + uiState.todayItems.filter {
                                     it.nextReviewTime <= System.currentTimeMillis()
                                 }
                                 onNavigateToFlashcard(dueItems)
                             },
-                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.elevatedCardColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                            padding = PaddingValues(AppSpacing.lg)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -301,24 +294,24 @@ fun HomeScreen(
                                         text = stringResource(R.string.start_review),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimary
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                     Text(
                                         text = "$dueCount 项待复习",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
                                 }
                                 Surface(
                                     shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Check,
+                                        imageVector = Icons.Rounded.Check,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier
-                                            .padding(12.dp)
+                                            .padding(AppSpacing.sm)
                                             .size(24.dp)
                                     )
                                 }
@@ -334,7 +327,7 @@ fun HomeScreen(
                         StickyHeader(
                             title = stringResource(R.string.section_overdue),
                             count = uiState.overdueItems.size,
-                            icon = Icons.Outlined.Warning,
+                            icon = Icons.Rounded.Warning,
                             backgroundColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -361,7 +354,7 @@ fun HomeScreen(
                         StickyHeader(
                             title = stringResource(R.string.section_due_today),
                             count = uiState.todayItems.size,
-                            icon = Icons.Outlined.DateRange,
+                            icon = Icons.Rounded.DateRange,
                             backgroundColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -388,7 +381,7 @@ fun HomeScreen(
                         StickyHeader(
                             title = stringResource(R.string.section_upcoming),
                             count = uiState.upcomingItems.size,
-                            icon = Icons.Outlined.DateRange,
+                            icon = Icons.Rounded.DateRange,
                             backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -415,7 +408,7 @@ fun HomeScreen(
                         StickyHeader(
                             title = stringResource(R.string.section_completed),
                             count = uiState.completedItems.size,
-                            icon = Icons.Outlined.CheckCircle,
+                            icon = Icons.Rounded.CheckCircle,
                             backgroundColor = Color(0xFFE8F5E9),
                             contentColor = Color(0xFF2E7D32)
                         )
@@ -545,21 +538,11 @@ private fun DailyProgressCard(
         label = "progress"
     )
 
-    Card(
+    AppCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (progress.isAllDone && totalPending == 0)
-                Color(0xFFE8F5E9)
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        tone = if (progress.isAllDone && totalPending == 0) AppCardTone.Accent else AppCardTone.Surface,
+        padding = PaddingValues(AppSpacing.md)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -571,7 +554,7 @@ private fun DailyProgressCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.xxs))
                     Text(
                         text = if (totalPending > 0)
                             stringResource(R.string.items_to_review, totalPending)
@@ -591,7 +574,7 @@ private fun DailyProgressCard(
                         .clip(CircleShape)
                         .background(
                             if (progress.isAllDone && totalPending == 0)
-                                Color(0xFF4CAF50)
+                                MaterialTheme.colorScheme.tertiary
                             else
                                 MaterialTheme.colorScheme.primary
                         ),
@@ -606,7 +589,7 @@ private fun DailyProgressCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
 
             // Progress Bar
             LinearProgressIndicator(
@@ -616,13 +599,12 @@ private fun DailyProgressCard(
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
                 color = if (progress.isAllDone && totalPending == 0)
-                    Color(0xFF4CAF50)
+                    MaterialTheme.colorScheme.tertiary
                 else
                     MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 strokeCap = StrokeCap.Round
             )
-        }
     }
 }
 
@@ -640,13 +622,13 @@ private fun StickyHeader(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = backgroundColor.copy(alpha = 0.9f),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.large,
         shadowElevation = 2.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -659,7 +641,7 @@ private fun StickyHeader(
                     tint = contentColor,
                     modifier = Modifier.size(20.dp)
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(AppSpacing.xs))
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
@@ -668,7 +650,7 @@ private fun StickyHeader(
                 )
             }
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = MaterialTheme.shapes.large,
                 color = contentColor.copy(alpha = 0.2f)
             ) {
                 Text(
@@ -676,7 +658,7 @@ private fun StickyHeader(
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = contentColor,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = AppSpacing.sm, vertical = AppSpacing.xxs)
                 )
             }
         }
@@ -722,13 +704,13 @@ private fun SwipeableItemCard(
                     .fillMaxSize()
                     .background(
                         color = MaterialTheme.colorScheme.error,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.large
                     )
                     .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Delete,
+                    imageVector = Icons.Rounded.Delete,
                     contentDescription = stringResource(R.string.delete),
                     modifier = Modifier.scale(scale),
                     tint = MaterialTheme.colorScheme.onError
@@ -780,19 +762,11 @@ private fun ToDoItemCard(
         CardType.COMPLETED -> com.example.memoryhelper.ui.theme.StripCompleted
     }
 
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 8.dp,
-            hoveredElevation = 6.dp
-        ),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(16.dp)
+    AppCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = AppCardTone.Elevated,
+        padding = PaddingValues(0.dp),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.fillMaxWidth()
@@ -804,7 +778,7 @@ private fun ToDoItemCard(
                     .height(88.dp)
                     .background(
                         color = stripColor,
-                        shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
+                        shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
                     )
             )
 
@@ -812,7 +786,7 @@ private fun ToDoItemCard(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -830,16 +804,16 @@ private fun ToDoItemCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.xxs))
 
                     // Notebook tag + Stage badge row
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
                     ) {
                         // Stage badge
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = stripColor.copy(alpha = 0.15f)
                         ) {
                             Text(
@@ -847,12 +821,12 @@ private fun ToDoItemCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium,
                                 color = stripColor,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = AppSpacing.xs, vertical = AppSpacing.xxs)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.xxs))
 
                     // Time indicator - Right side display
                     ReviewTimeText(
@@ -862,12 +836,12 @@ private fun ToDoItemCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(AppSpacing.sm))
 
                 // Quick Action Buttons (only for non-completed items)
                 if (!isCompleted) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
                     ) {
                         // Forgot button (soft red)
                         Surface(
@@ -881,7 +855,7 @@ private fun ToDoItemCard(
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Refresh,
+                                    imageVector = Icons.Rounded.Refresh,
                                     contentDescription = stringResource(R.string.forgot_reset),
                                     modifier = Modifier.size(22.dp),
                                     tint = MaterialTheme.colorScheme.error
@@ -892,7 +866,7 @@ private fun ToDoItemCard(
                         Surface(
                             modifier = Modifier.size(44.dp),
                             shape = CircleShape,
-                            color = Color(0xFFE8F5E9),
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
                             onClick = onQuickRemember
                         ) {
                             Box(
@@ -900,10 +874,10 @@ private fun ToDoItemCard(
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Check,
+                                    imageVector = Icons.Rounded.Check,
                                     contentDescription = stringResource(R.string.remember_done),
                                     modifier = Modifier.size(22.dp),
-                                    tint = SuccessGreen
+                                    tint = MaterialTheme.colorScheme.tertiary
                                 )
                             }
                         }
@@ -913,16 +887,16 @@ private fun ToDoItemCard(
                     Surface(
                         modifier = Modifier.size(44.dp),
                         shape = CircleShape,
-                        color = Color(0xFFE8F5E9)
+                        color = MaterialTheme.colorScheme.tertiaryContainer
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier.fillMaxSize()
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.CheckCircle,
+                                imageVector = Icons.Rounded.CheckCircle,
                                 contentDescription = stringResource(R.string.completed),
-                                tint = SuccessGreen,
+                                tint = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -994,7 +968,7 @@ private fun ReviewTimeText(
     }
 
     val textColor = when {
-        isCompleted -> Color(0xFF4CAF50)
+        isCompleted -> MaterialTheme.colorScheme.tertiary
         cardType == CardType.OVERDUE -> MaterialTheme.colorScheme.error
         isDue -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -1019,18 +993,18 @@ private fun EmptyStateView(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Outlined.CheckCircle,
+                imageVector = Icons.Rounded.CheckCircle,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.lg))
             Text(
                 text = stringResource(R.string.no_items_yet),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.xs))
             Text(
                 text = stringResource(R.string.tap_to_add_first_item),
                 style = MaterialTheme.typography.bodyMedium,
@@ -1070,7 +1044,7 @@ private fun ReviewDialog(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Delete,
+                        imageVector = Icons.Rounded.Delete,
                         contentDescription = stringResource(R.string.delete_item),
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -1101,7 +1075,7 @@ private fun ReviewDialog(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.sm))
 
                 // Content
                 val noContentText = stringResource(R.string.no_content)
@@ -1110,29 +1084,27 @@ private fun ReviewDialog(
                     style = MaterialTheme.typography.bodyLarge
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.lg))
 
                 // Status info
                 if (isCompleted) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFE8F5E9)
-                        )
+                    AppCard(
+                        tone = AppCardTone.Accent,
+                        padding = PaddingValues(AppSpacing.sm)
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.CheckCircle,
+                                imageVector = Icons.Rounded.CheckCircle,
                                 contentDescription = null,
-                                tint = Color(0xFF4CAF50)
+                                tint = MaterialTheme.colorScheme.tertiary
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(AppSpacing.xs))
                             Text(
                                 text = stringResource(R.string.item_completed_message),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF2E7D32)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -1150,7 +1122,7 @@ private fun ReviewDialog(
                         )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Close,
+                            imageVector = Icons.Rounded.Close,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -1164,11 +1136,11 @@ private fun ReviewDialog(
                     Button(
                         onClick = onRemember,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4CAF50)
+                            containerColor = MaterialTheme.colorScheme.tertiary
                         )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Check,
+                            imageVector = Icons.Rounded.Check,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
@@ -1177,16 +1149,18 @@ private fun ReviewDialog(
                     }
                 }
             } else {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.close))
-                }
+                SecondaryButton(
+                    text = stringResource(R.string.close),
+                    onClick = onDismiss
+                )
             }
         },
         dismissButton = {
             if (!isCompleted) {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.cancel))
-                }
+                SecondaryButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = onDismiss
+                )
             }
         }
     )
@@ -1208,30 +1182,28 @@ private fun AddItemDialog(
         title = { Text(stringResource(R.string.add_new_item)) },
         text = {
             Column {
-                OutlinedTextField(
+                AppTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text(stringResource(R.string.title)) },
+                    label = stringResource(R.string.title),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
+                Spacer(modifier = Modifier.height(AppSpacing.sm))
+                AppTextField(
                     value = content,
                     onValueChange = { content = it },
-                    label = { Text(stringResource(R.string.content)) },
-                    minLines = 3,
-                    maxLines = 5,
+                    label = stringResource(R.string.content),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.sm))
                 Text(
                     text = stringResource(R.string.select_notebook),
                     style = MaterialTheme.typography.labelMedium
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
                 ) {
                     items(notebooks) { notebook ->
                         FilterChip(
@@ -1244,17 +1216,17 @@ private fun AddItemDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            PrimaryButton(
+                text = stringResource(R.string.add),
                 onClick = { onConfirm(title, content, selectedId) },
                 enabled = title.isNotBlank()
-            ) {
-                Text(stringResource(R.string.add))
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            SecondaryButton(
+                text = stringResource(R.string.cancel),
+                onClick = onDismiss
+            )
         }
     )
 }
@@ -1270,27 +1242,27 @@ private fun AddNotebookDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_notebook)) },
         text = {
-            OutlinedTextField(
+            AppTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text(stringResource(R.string.notebook_name)) },
-                placeholder = { Text(stringResource(R.string.notebook_name_hint)) },
+                label = stringResource(R.string.notebook_name),
+                placeholder = stringResource(R.string.notebook_name_hint),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
-            TextButton(
+            PrimaryButton(
+                text = stringResource(R.string.add),
                 onClick = { onConfirm(name) },
                 enabled = name.isNotBlank()
-            ) {
-                Text(stringResource(R.string.add))
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            SecondaryButton(
+                text = stringResource(R.string.cancel),
+                onClick = onDismiss
+            )
         }
     )
 }
@@ -1313,64 +1285,36 @@ private fun NotebookOptionsDialog(
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.xxs)
             ) {
                 Text(
                     text = notebook.name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = AppSpacing.xs)
                 )
 
                 // Rename option
-                TextButton(
-                    onClick = onRename,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(stringResource(R.string.rename))
-                    }
-                }
+                AppListItem(
+                    title = stringResource(R.string.rename),
+                    leadingIcon = Icons.Rounded.Edit,
+                    onClick = onRename
+                )
 
                 // Delete option
-                TextButton(
-                    onClick = onDelete,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(stringResource(R.string.delete_action))
-                    }
-                }
+                AppListItem(
+                    title = stringResource(R.string.delete_action),
+                    leadingIcon = Icons.Rounded.Delete,
+                    onClick = onDelete
+                )
             }
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            SecondaryButton(
+                text = stringResource(R.string.cancel),
+                onClick = onDismiss
+            )
         }
     )
 }
@@ -1387,26 +1331,26 @@ private fun RenameNotebookDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.rename_notebook)) },
         text = {
-            OutlinedTextField(
+            AppTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text(stringResource(R.string.notebook_name)) },
+                label = stringResource(R.string.notebook_name),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
-            TextButton(
+            PrimaryButton(
+                text = stringResource(R.string.save),
                 onClick = { onConfirm(name) },
                 enabled = name.isNotBlank()
-            ) {
-                Text(stringResource(R.string.save))
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            SecondaryButton(
+                text = stringResource(R.string.cancel),
+                onClick = onDismiss
+            )
         }
     )
 }
@@ -1424,19 +1368,17 @@ private fun DeleteNotebookDialog(
             Text(stringResource(R.string.delete_notebook_warning, notebook.name))
         },
         confirmButton = {
-            Button(
+            PrimaryButton(
+                text = stringResource(R.string.confirm_delete),
                 onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text(stringResource(R.string.confirm_delete))
-            }
+                containerColor = MaterialTheme.colorScheme.error
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            SecondaryButton(
+                text = stringResource(R.string.cancel),
+                onClick = onDismiss
+            )
         }
     )
 }
@@ -1470,7 +1412,7 @@ private fun ModernHeader(
                     )
                 )
             )
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(horizontal = AppSpacing.lg, vertical = AppSpacing.md)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1487,7 +1429,7 @@ private fun ModernHeader(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
                 Text(
                     text = if (pendingCount > 0)
                         stringResource(R.string.tasks_pending, pendingCount)
@@ -1501,7 +1443,7 @@ private fun ModernHeader(
             // Right: Circular Progress + Search
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.md)
             ) {
                 // Circular Progress Ring
                 CircularProgressRing(
@@ -1515,7 +1457,7 @@ private fun ModernHeader(
                     modifier = Modifier.size(48.dp),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 4.dp,
+                    shadowElevation = 2.dp,
                     onClick = onSearchClick
                 ) {
                     Box(
@@ -1523,7 +1465,7 @@ private fun ModernHeader(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Search,
+                            imageVector = Icons.Rounded.Search,
                             contentDescription = stringResource(R.string.search),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(24.dp)
@@ -1554,7 +1496,14 @@ private fun CircularProgressRing(
     )
 
     val isComplete = completed >= total && total > 0
-    val progressColor = if (isComplete) SuccessGreen else PrimaryBlue
+    val progressColor = if (isComplete) {
+        MaterialTheme.colorScheme.tertiary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val ringBackground = MaterialTheme.colorScheme.surface
 
     Box(
         modifier = Modifier
@@ -1565,7 +1514,7 @@ private fun CircularProgressRing(
                 clip = false
             )
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface),
+            .background(ringBackground),
         contentAlignment = Alignment.Center
     ) {
         // Background circle track
@@ -1574,7 +1523,7 @@ private fun CircularProgressRing(
         ) {
             val strokeWidth = 8.dp.toPx()
             drawCircle(
-                color = com.example.memoryhelper.ui.theme.ProgressBackgroundLight,
+                color = trackColor,
                 radius = (size.minDimension / 2) - strokeWidth / 2,
                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
             )

@@ -22,11 +22,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -143,7 +141,7 @@ private fun MainContent() {
                     },
                     icon = {
                         Icon(
-                            imageVector = if (selectedTab == 0) Icons.Filled.Home else Icons.Outlined.Home,
+                            imageVector = Icons.Rounded.Home,
                             contentDescription = stringResource(R.string.nav_home)
                         )
                     },
@@ -159,7 +157,7 @@ private fun MainContent() {
                     },
                     icon = {
                         Icon(
-                            imageVector = if (selectedTab == 1) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                            imageVector = Icons.Rounded.CheckCircle,
                             contentDescription = stringResource(R.string.nav_todo)
                         )
                     },
@@ -292,7 +290,7 @@ private fun PermissionBanner(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Warning,
+                    imageVector = Icons.Rounded.Warning,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error
                 )
