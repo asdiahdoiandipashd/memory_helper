@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Data extraction rules for Memory Helper app (Android 12+)
+   Ensures user data is backed up to cloud and transferred between devices
+   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Include database files in cloud backup -->
+        <include domain="database" path="." />
+        
+        <!-- Include shared preferences -->
+        <include domain="sharedpref" path="." />
+        
+        <!-- Include app files -->
+        <include domain="file" path="." />
+    </cloud-backup>
+    
+    <device-transfer>
+        <!-- Include database files in device transfer -->
+        <include domain="database" path="." />
+        
+        <!-- Include shared preferences -->
+        <include domain="sharedpref" path="." />
+        
+        <!-- Include app files -->
+        <include domain="file" path="." />
+    </device-transfer>
+</data-extraction-rules>
