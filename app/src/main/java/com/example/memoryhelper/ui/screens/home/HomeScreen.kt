@@ -119,6 +119,17 @@ fun HomeScreen(
     var showOptionsDialog by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30000L)
+            currentTime = System.currentTimeMillis()
+        }
+    }
+
+    val hasAnyDueItems = uiState.overdueItems.isNotEmpty() ||
+        uiState.todayItems.any { it.nextReviewTime <= currentTime }
 
     Scaffold(
         topBar = {
@@ -195,7 +206,10 @@ fun HomeScreen(
                         )
                     )
                 }
-                items(notebooks) { notebook ->
+                items(
+                    items = notebooks,
+                    key = { it.id }
+                ) { notebook ->
                     FilterChip(
                         selected = selectedNotebookId == notebook.id,
                         onClick = { viewModel.selectNotebook(notebook.id) },
@@ -253,6 +267,7 @@ fun HomeScreen(
                             MemoryItemStatus.COMPLETED -> CardType.COMPLETED
                             else -> CardType.TODAY
                         },
+                        currentTime = currentTime,
                         onClick = { selectedItem = item },
                         onQuickRemember = { viewModel.markAsRemembered(item) },
                         onQuickForgot = { viewModel.markAsForgot(item) },
@@ -267,18 +282,18 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
                 ) {
                 // Start Review Button - Modern gradient style
-                if (uiState.hasAnyDueItems) {
+                if (hasAnyDueItems) {
                     item {
-                        val dueCount = uiState.overdueItems.size + uiState.todayItems.filter {
-                            it.nextReviewTime <= System.currentTimeMillis()
-                        }.size
+                        val dueCount = uiState.overdueItems.size + uiState.todayItems.count {
+                            it.nextReviewTime <= currentTime
+                        }
 
                         AppCard(
                             modifier = Modifier.fillMaxWidth(),
                             tone = AppCardTone.Accent,
                             onClick = {
                                 val dueItems = uiState.overdueItems + uiState.todayItems.filter {
-                                    it.nextReviewTime <= System.currentTimeMillis()
+                                    it.nextReviewTime <= currentTime
                                 }
                                 onNavigateToFlashcard(dueItems)
                             },
@@ -339,6 +354,7 @@ fun HomeScreen(
                         SwipeableItemCard(
                             item = item,
                             cardType = CardType.OVERDUE,
+                            currentTime = currentTime,
                             onClick = { selectedItem = item },
                             onQuickRemember = { viewModel.markAsRemembered(item) },
                             onQuickForgot = { viewModel.markAsForgot(item) },
@@ -366,6 +382,7 @@ fun HomeScreen(
                         SwipeableItemCard(
                             item = item,
                             cardType = CardType.TODAY,
+                            currentTime = currentTime,
                             onClick = { selectedItem = item },
                             onQuickRemember = { viewModel.markAsRemembered(item) },
                             onQuickForgot = { viewModel.markAsForgot(item) },
@@ -393,6 +410,7 @@ fun HomeScreen(
                         SwipeableItemCard(
                             item = item,
                             cardType = CardType.UPCOMING,
+                            currentTime = currentTime,
                             onClick = { selectedItem = item },
                             onQuickRemember = { viewModel.markAsRemembered(item) },
                             onQuickForgot = { viewModel.markAsForgot(item) },
@@ -420,6 +438,7 @@ fun HomeScreen(
                         SwipeableItemCard(
                             item = item,
                             cardType = CardType.COMPLETED,
+                            currentTime = currentTime,
                             onClick = { selectedItem = item },
                             onQuickRemember = { },
                             onQuickForgot = { },
@@ -507,6 +526,7 @@ fun HomeScreen(
         selectedItem?.let { item ->
             ReviewDialog(
                 item = item,
+                currentTime = currentTime,
                 onDismiss = { selectedItem = null },
                 onRemember = {
                     viewModel.markAsRemembered(item)
@@ -674,6 +694,7 @@ private fun StickyHeader(
 private fun SwipeableItemCard(
     item: MemoryItem,
     cardType: CardType,
+    currentTime: Long,
     onClick: () -> Unit,
     onQuickRemember: () -> Unit,
     onQuickForgot: () -> Unit,
@@ -723,6 +744,7 @@ private fun SwipeableItemCard(
         ToDoItemCard(
             item = item,
             cardType = cardType,
+            currentTime = currentTime,
             onClick = onClick,
             onQuickRemember = onQuickRemember,
             onQuickForgot = onQuickForgot
@@ -744,6 +766,7 @@ private enum class CardType {
 private fun ToDoItemCard(
     item: MemoryItem,
     cardType: CardType,
+    currentTime: Long,
     onClick: () -> Unit,
     onQuickRemember: () -> Unit,
     onQuickForgot: () -> Unit
@@ -751,7 +774,6 @@ private fun ToDoItemCard(
     val isCompleted = cardType == CardType.COMPLETED
 
     // 移除实时倒计时，改为静态显示 - 性能优化
-    val currentTime = remember { System.currentTimeMillis() }
     val isDueNow = item.nextReviewTime <= currentTime && !isCompleted
 
     // Determine strip color based on status
@@ -831,6 +853,7 @@ private fun ToDoItemCard(
                     // Time indicator - Right side display
                     ReviewTimeText(
                         targetTime = item.nextReviewTime,
+                        currentTime = currentTime,
                         isCompleted = isCompleted,
                         cardType = cardType
                     )
@@ -913,23 +936,11 @@ private fun ToDoItemCard(
 @Composable
 private fun ReviewTimeText(
     targetTime: Long,
+    currentTime: Long,
     isCompleted: Boolean,
     cardType: CardType,
     modifier: Modifier = Modifier
 ) {
-    // 使用 remember 缓存当前时间，减少重组
-    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
-
-    // 只在需要时更新（非完成状态）
-    if (!isCompleted) {
-        LaunchedEffect(targetTime) {
-            while (true) {
-                delay(30000L) // 改为30秒更新一次，减少重组频率
-                currentTime = System.currentTimeMillis()
-            }
-        }
-    }
-
     val isDue = targetTime <= currentTime && !isCompleted
     val diff = targetTime - currentTime
 
@@ -943,6 +954,7 @@ private fun ReviewTimeText(
     val timeDueMinutes = stringResource(R.string.time_due_minutes)
     val timeDueHours = stringResource(R.string.time_due_hours)
     val timeDueDate = stringResource(R.string.time_due_date)
+    val dateFormat = remember { SimpleDateFormat("M月d日 HH:mm", Locale.CHINESE) }
 
     val displayText = when {
         isCompleted -> timeCompleted
@@ -962,7 +974,6 @@ private fun ReviewTimeText(
         diff < 60 * 60 * 1000 -> String.format(timeDueMinutes, diff / (60 * 1000))
         diff < 24 * 60 * 60 * 1000 -> String.format(timeDueHours, diff / (60 * 60 * 1000))
         else -> {
-            val dateFormat = SimpleDateFormat("M月d日 HH:mm", Locale.CHINESE)
             String.format(timeDueDate, dateFormat.format(Date(targetTime)))
         }
     }
@@ -1017,6 +1028,7 @@ private fun EmptyStateView(modifier: Modifier = Modifier) {
 @Composable
 private fun ReviewDialog(
     item: MemoryItem,
+    currentTime: Long,
     onDismiss: () -> Unit,
     onRemember: () -> Unit,
     onForgot: () -> Unit,
@@ -1070,6 +1082,7 @@ private fun ReviewDialog(
                     if (!isCompleted) {
                         ReviewTimeText(
                             targetTime = item.nextReviewTime,
+                            currentTime = currentTime,
                             isCompleted = false,
                             cardType = CardType.TODAY
                         )
@@ -1205,7 +1218,10 @@ private fun AddItemDialog(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
                 ) {
-                    items(notebooks) { notebook ->
+                    items(
+                        items = notebooks,
+                        key = { it.id }
+                    ) { notebook ->
                         FilterChip(
                             selected = selectedId == notebook.id,
                             onClick = { selectedId = notebook.id },

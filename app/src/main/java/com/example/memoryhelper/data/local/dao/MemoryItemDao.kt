@@ -27,13 +27,13 @@ interface MemoryItemDao {
     @Query("SELECT * FROM memory_items WHERE id = :id")
     suspend fun getById(id: Long): MemoryItem?
 
-    @Query("SELECT * FROM memory_items ORDER BY created_at DESC")
+    @Query("SELECT * FROM memory_items WHERE deleted_at IS NULL ORDER BY created_at DESC")
     suspend fun getAllItems(): List<MemoryItem>
 
-    @Query("SELECT * FROM memory_items ORDER BY next_review_time ASC")
+    @Query("SELECT * FROM memory_items WHERE deleted_at IS NULL ORDER BY next_review_time ASC")
     fun getAllItemsFlow(): Flow<List<MemoryItem>>
 
-    @Query("SELECT * FROM memory_items WHERE status = :status ORDER BY next_review_time ASC")
+    @Query("SELECT * FROM memory_items WHERE deleted_at IS NULL AND status = :status ORDER BY next_review_time ASC")
     fun getItemsByStatus(status: Int): Flow<List<MemoryItem>>
 
     /**
@@ -42,7 +42,7 @@ interface MemoryItemDao {
      */
     @Query("""
         SELECT * FROM memory_items
-        WHERE status = 1 AND next_review_time <= :currentTime
+        WHERE deleted_at IS NULL AND status = 1 AND next_review_time <= :currentTime
         ORDER BY next_review_time ASC
     """)
     fun getDueItems(currentTime: Long): Flow<List<MemoryItem>>
@@ -53,14 +53,14 @@ interface MemoryItemDao {
      */
     @Query("""
         SELECT MIN(next_review_time) FROM memory_items
-        WHERE status = 1 AND next_review_time > :currentTime
+        WHERE deleted_at IS NULL AND status = 1 AND next_review_time > :currentTime
     """)
     suspend fun getNextAlarmTime(currentTime: Long): Long?
 
     /**
      * Count items by status
      */
-    @Query("SELECT COUNT(*) FROM memory_items WHERE status = :status")
+    @Query("SELECT COUNT(*) FROM memory_items WHERE deleted_at IS NULL AND status = :status")
     suspend fun countByStatus(status: Int): Int
 
     /**
@@ -68,7 +68,7 @@ interface MemoryItemDao {
      */
     @Query("""
         SELECT * FROM memory_items
-        WHERE title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%'
+        WHERE deleted_at IS NULL AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%')
         ORDER BY created_at DESC
     """)
     fun searchItems(query: String): Flow<List<MemoryItem>>
@@ -78,7 +78,30 @@ interface MemoryItemDao {
      */
     @Query("""
         SELECT COUNT(*) FROM memory_items
-        WHERE status = 1 AND next_review_time <= :currentTime
+        WHERE deleted_at IS NULL AND status = 1 AND next_review_time <= :currentTime
     """)
     suspend fun countDueItems(currentTime: Long): Int
+
+    @Query(
+        """
+        SELECT * FROM memory_items
+        WHERE deleted_at IS NULL
+          AND status = 1
+          AND next_review_time <= :endTime
+        ORDER BY next_review_time ASC
+        """
+    )
+    suspend fun getDueItemsBefore(endTime: Long): List<MemoryItem>
+
+    @Query(
+        """
+        SELECT id FROM memory_items
+        WHERE deleted_at IS NULL
+          AND notebook_id = :notebookId
+          AND title = :title
+          AND content = :content
+        LIMIT 1
+        """
+    )
+    suspend fun findIdByDedup(notebookId: Long, title: String, content: String): Long?
 }

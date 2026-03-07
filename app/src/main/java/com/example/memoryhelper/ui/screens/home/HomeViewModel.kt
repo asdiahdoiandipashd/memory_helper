@@ -11,14 +11,12 @@ import com.example.memoryhelper.data.local.entity.MemoryItem
 import com.example.memoryhelper.data.local.entity.MemoryItemStatus
 import com.example.memoryhelper.data.repository.MemoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -57,7 +55,7 @@ data class HomeUiState(
         get() = overdueItems + todayItems + upcomingItems + completedItems
 
     val totalDueNow: Int
-        get() = overdueItems.size + todayItems.filter { it.nextReviewTime <= System.currentTimeMillis() }.size
+        get() = overdueItems.size + todayItems.count { it.nextReviewTime <= System.currentTimeMillis() }
 
     val hasAnyDueItems: Boolean
         get() = overdueItems.isNotEmpty() || todayItems.any { it.nextReviewTime <= System.currentTimeMillis() }
@@ -97,16 +95,8 @@ class HomeViewModel @Inject constructor(
     private val _selectedNotebookId = MutableStateFlow<Long?>(null)
     val selectedNotebookId: StateFlow<Long?> = _selectedNotebookId.asStateFlow()
 
-    // A flow that emits the current time every second for accurate "due" calculation
-    private val currentTimeFlow = flow {
-        while (true) {
-            emit(System.currentTimeMillis())
-            delay(1000L)
-        }
-    }
-
     /**
-     * UI state that combines all items with current time and today's review count
+     * UI state that combines items with today's review count
      * to create a comprehensive To-Do List view.
      */
     val uiState: StateFlow<HomeUiState> = combine(_searchQuery, _selectedNotebookId) { query, notebookId ->
@@ -117,13 +107,13 @@ class HomeViewModel @Inject constructor(
         } else {
             repository.searchItems(query)
         }
-        combine(itemsFlow, repository.getTodayReviewCountFlow(), currentTimeFlow) { items, completedTodayCount, currentTime ->
+        combine(itemsFlow, repository.getTodayReviewCountFlow()) { items, completedTodayCount ->
             val filteredItems = if (notebookId != null) {
                 items.filter { it.notebookId == notebookId }
             } else {
                 items
             }
-            categorizeItems(filteredItems, completedTodayCount, currentTime)
+            categorizeItems(filteredItems, completedTodayCount)
         }
     }.stateIn(
         scope = viewModelScope,
@@ -142,8 +132,7 @@ class HomeViewModel @Inject constructor(
      */
     private fun categorizeItems(
         items: List<MemoryItem>,
-        completedTodayCount: Int,
-        currentTime: Long
+        completedTodayCount: Int
     ): HomeUiState {
         val startOfToday = getStartOfToday()
         val endOfToday = getEndOfToday()

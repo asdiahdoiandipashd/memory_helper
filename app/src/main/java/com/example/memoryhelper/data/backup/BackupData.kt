@@ -35,7 +35,12 @@ data class MemoryItemDto(
     val stageIndex: Int,
     val nextReviewTime: Long,
     val lastReviewTime: Long,
-    val createdAt: Long
+    val createdAt: Long,
+    val cardType: String = "basic",
+    val mediaRefs: String = "[]",
+    val sourceType: String = "manual",
+    val updatedAt: Long = 0L,
+    val deletedAt: Long? = null
 ) {
     fun toEntity(): MemoryItem = MemoryItem(
         id = id,
@@ -48,7 +53,12 @@ data class MemoryItemDto(
         stageIndex = stageIndex,
         nextReviewTime = nextReviewTime,
         lastReviewTime = lastReviewTime,
-        createdAt = createdAt
+        createdAt = createdAt,
+        cardType = cardType,
+        mediaRefs = mediaRefs,
+        sourceType = sourceType,
+        updatedAt = if (updatedAt == 0L) createdAt else updatedAt,
+        deletedAt = deletedAt
     )
 
     companion object {
@@ -63,7 +73,12 @@ data class MemoryItemDto(
             stageIndex = entity.stageIndex,
             nextReviewTime = entity.nextReviewTime,
             lastReviewTime = entity.lastReviewTime,
-            createdAt = entity.createdAt
+            createdAt = entity.createdAt,
+            cardType = entity.cardType,
+            mediaRefs = entity.mediaRefs,
+            sourceType = entity.sourceType,
+            updatedAt = entity.updatedAt,
+            deletedAt = entity.deletedAt
         )
     }
 }
@@ -101,14 +116,22 @@ data class ReviewLogDto(
     val itemId: Long,
     val actualReviewTime: Long,
     val plannedReviewTime: Long,
-    val reviewAction: Int
+    val reviewAction: Int,
+    val grade: Int = com.example.memoryhelper.data.local.entity.ReviewGrade.GOOD,
+    val responseMs: Long = 0L,
+    val dueDeltaMs: Long = 0L,
+    val schedulerVersion: String = "v2"
 ) {
     fun toEntity(): ReviewLog = ReviewLog(
         id = id,
         itemId = itemId,
         actualReviewTime = actualReviewTime,
         plannedReviewTime = plannedReviewTime,
-        reviewAction = reviewAction
+        reviewAction = reviewAction,
+        grade = grade,
+        responseMs = responseMs,
+        dueDeltaMs = dueDeltaMs,
+        schedulerVersion = schedulerVersion
     )
 
     companion object {
@@ -117,7 +140,11 @@ data class ReviewLogDto(
             itemId = entity.itemId,
             actualReviewTime = entity.actualReviewTime,
             plannedReviewTime = entity.plannedReviewTime,
-            reviewAction = entity.reviewAction
+            reviewAction = entity.reviewAction,
+            grade = entity.grade,
+            responseMs = entity.responseMs,
+            dueDeltaMs = entity.dueDeltaMs,
+            schedulerVersion = entity.schedulerVersion
         )
     }
 }

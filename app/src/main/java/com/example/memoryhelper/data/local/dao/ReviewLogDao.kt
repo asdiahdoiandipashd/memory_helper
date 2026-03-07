@@ -71,4 +71,28 @@ interface ReviewLogDao {
      */
     @Query("SELECT * FROM review_logs WHERE id = :id")
     suspend fun getById(id: Long): ReviewLog?
+
+    @Query(
+        """
+        SELECT grade, COUNT(*) AS cnt
+        FROM review_logs
+        WHERE actual_review_time >= :startTime
+        GROUP BY grade
+        """
+    )
+    suspend fun getGradeDistribution(startTime: Long): List<GradeCountRow>
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM review_logs
+        WHERE actual_review_time >= :startTime
+          AND due_delta_ms > 0
+        """
+    )
+    suspend fun countOverdueReviews(startTime: Long): Int
 }
+
+data class GradeCountRow(
+    val grade: Int,
+    val cnt: Int
+)

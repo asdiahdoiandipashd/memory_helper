@@ -95,5 +95,36 @@ data class MemoryItem(
      * Creation timestamp (milliseconds)
      */
     @ColumnInfo(name = "created_at")
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    /**
+     * Card presentation type: basic, cloze, qa.
+     */
+    @ColumnInfo(name = "card_type")
+    val cardType: String = "basic",
+
+    /**
+     * JSON array of media references.
+     * Example: [{"uri":"content://...","type":"image","durationMs":0}]
+     */
+    @ColumnInfo(name = "media_refs")
+    val mediaRefs: String = "[]",
+
+    /**
+     * Source of this card: manual, csv_import, anki_import, ai_generated.
+     */
+    @ColumnInfo(name = "source_type")
+    val sourceType: String = "manual",
+
+    /**
+     * Last update timestamp (milliseconds).
+     */
+    @ColumnInfo(name = "updated_at")
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    /**
+     * Soft delete timestamp (milliseconds), null means active.
+     */
+    @ColumnInfo(name = "deleted_at")
+    val deletedAt: Long? = null
 )
