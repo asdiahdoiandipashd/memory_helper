@@ -10,6 +10,8 @@ import com.example.memoryhelper.data.local.entity.MemoryItemStatus
 import com.example.memoryhelper.data.local.entity.ReviewAction
 import com.example.memoryhelper.data.local.entity.ReviewCurve
 import com.example.memoryhelper.data.local.entity.ReviewLog
+import com.example.memoryhelper.domain.scheduler.ReviewGradeOption
+import com.example.memoryhelper.domain.scheduler.SchedulerEngine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -25,7 +27,8 @@ class MemoryRepository @Inject constructor(
     private val memoryItemDao: MemoryItemDao,
     private val reviewLogDao: ReviewLogDao,
     private val notebookDao: NotebookDao,
-    private val alarmScheduler: AlarmScheduler
+    private val alarmScheduler: AlarmScheduler,
+    private val schedulerEngine: SchedulerEngine
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -126,7 +129,8 @@ class MemoryRepository @Inject constructor(
             stageIndex = 0,
             nextReviewTime = nextReviewTime,
             lastReviewTime = now,
-            createdAt = now
+            createdAt = now,
+            updatedAt = now
         )
 
         val itemId = memoryItemDao.insert(newItem)
@@ -145,44 +149,7 @@ class MemoryRepository @Inject constructor(
      * - Else -> Increment stage_index and calculate next review time
      */
     suspend fun markAsRemembered(item: MemoryItem) {
-        val curve = item.curveId?.let { reviewCurveDao.getById(it) }
-        val intervals = curve?.let { parseIntervals(it.intervalsJson) } ?: STANDARD_INTERVALS
-        val now = System.currentTimeMillis()
-
-        // Log the review action
-        val log = ReviewLog(
-            itemId = item.id,
-            actualReviewTime = now,
-            plannedReviewTime = item.nextReviewTime,
-            reviewAction = ReviewAction.REMEMBERED
-        )
-        reviewLogDao.insert(log)
-
-        val nextStageIndex = item.stageIndex + 1
-
-        val updatedItem = if (nextStageIndex >= intervals.size) {
-            // Completed all stages - mark as completed
-            item.copy(
-                status = MemoryItemStatus.COMPLETED,
-                lastReviewTime = now,
-                nextReviewTime = Long.MAX_VALUE
-            )
-        } else {
-            // Advance to next stage
-            val nextIntervalMinutes = intervals[nextStageIndex]
-            val nextReviewTime = now + (nextIntervalMinutes * 60 * 1000)
-
-            item.copy(
-                stageIndex = nextStageIndex,
-                nextReviewTime = nextReviewTime,
-                lastReviewTime = now
-            )
-        }
-
-        memoryItemDao.update(updatedItem)
-
-        // Schedule the next alarm after updating
-        alarmScheduler.scheduleNextAlarm()
+        reviewWithGrade(item, ReviewGradeOption.GOOD)
     }
 
     /**
@@ -193,32 +160,43 @@ class MemoryRepository @Inject constructor(
      * - Calculate next review time from the first interval
      */
     suspend fun markAsForgot(item: MemoryItem) {
+        reviewWithGrade(item, ReviewGradeOption.AGAIN)
+    }
+
+    suspend fun reviewWithGrade(
+        item: MemoryItem,
+        grade: ReviewGradeOption,
+        responseMs: Long = 0L
+    ) {
         val curve = item.curveId?.let { reviewCurveDao.getById(it) }
         val intervals = curve?.let { parseIntervals(it.intervalsJson) } ?: STANDARD_INTERVALS
         val now = System.currentTimeMillis()
+        val result = schedulerEngine.grade(item, intervals, grade, now)
 
-        // Log the review action
         val log = ReviewLog(
             itemId = item.id,
             actualReviewTime = now,
             plannedReviewTime = item.nextReviewTime,
-            reviewAction = ReviewAction.FORGOT
+            reviewAction = if (grade == ReviewGradeOption.AGAIN) {
+                ReviewAction.FORGOT
+            } else {
+                ReviewAction.REMEMBERED
+            },
+            grade = grade.dbValue,
+            responseMs = responseMs,
+            dueDeltaMs = now - item.nextReviewTime,
+            schedulerVersion = "v2"
         )
         reviewLogDao.insert(log)
 
-        val firstIntervalMinutes = intervals.firstOrNull() ?: 5L
-        val nextReviewTime = now + (firstIntervalMinutes * 60 * 1000)
-
-        val resetItem = item.copy(
-            stageIndex = 0,
-            nextReviewTime = nextReviewTime,
+        val updatedItem = item.copy(
+            stageIndex = result.newStageIndex,
+            nextReviewTime = result.nextReviewTime,
             lastReviewTime = now,
-            status = MemoryItemStatus.REVIEWING // Ensure status is REVIEWING
+            status = if (result.completed) MemoryItemStatus.COMPLETED else MemoryItemStatus.REVIEWING,
+            updatedAt = now
         )
-
-        memoryItemDao.update(resetItem)
-
-        // Schedule the next alarm after updating
+        memoryItemDao.update(updatedItem)
         alarmScheduler.scheduleNextAlarm()
     }
 

@@ -3,6 +3,7 @@
 
     <!-- Navigation -->
     <string name="nav_home">首页</string>
+    <string name="nav_exam">计划</string>
     <string name="nav_todo">待办</string>
     <string name="nav_stats">统计</string>
     <string name="nav_settings">设置</string>
@@ -129,6 +130,10 @@
     <string name="start_review">开始今日复习</string>
     <string name="flashcard_progress" formatted="false">%d / %d</string>
     <string name="tap_to_flip">点击翻转</string>
+    <string name="review_again">重来</string>
+    <string name="review_hard">困难</string>
+    <string name="review_good">良好</string>
+    <string name="review_easy">简单</string>
     <string name="review_complete">复习完成！</string>
     <string name="reviewed_items">已复习 %d 项</string>
     <string name="back_to_home">返回首页</string>

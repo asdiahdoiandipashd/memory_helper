@@ -10,6 +10,7 @@ import com.example.memoryhelper.R
 import com.example.memoryhelper.data.local.entity.MemoryItem
 import com.example.memoryhelper.data.local.entity.MemoryItemStatus
 import com.example.memoryhelper.data.repository.MemoryRepository
+import com.example.memoryhelper.domain.scheduler.ReviewGradeOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -241,8 +242,30 @@ class HomeViewModel @Inject constructor(
      * Marks an item as remembered and advances to the next review stage.
      */
     fun markAsRemembered(item: MemoryItem) {
+        reviewGood(item)
+    }
+
+    fun reviewAgain(item: MemoryItem, responseMs: Long = 0L) {
         viewModelScope.launch {
-            repository.markAsRemembered(item)
+            repository.reviewWithGrade(item, ReviewGradeOption.AGAIN, responseMs)
+        }
+    }
+
+    fun reviewHard(item: MemoryItem, responseMs: Long = 0L) {
+        viewModelScope.launch {
+            repository.reviewWithGrade(item, ReviewGradeOption.HARD, responseMs)
+        }
+    }
+
+    fun reviewGood(item: MemoryItem, responseMs: Long = 0L) {
+        viewModelScope.launch {
+            repository.reviewWithGrade(item, ReviewGradeOption.GOOD, responseMs)
+        }
+    }
+
+    fun reviewEasy(item: MemoryItem, responseMs: Long = 0L) {
+        viewModelScope.launch {
+            repository.reviewWithGrade(item, ReviewGradeOption.EASY, responseMs)
         }
     }
 
@@ -250,9 +273,19 @@ class HomeViewModel @Inject constructor(
      * Marks an item as forgot and resets to the first review stage.
      */
     fun markAsForgot(item: MemoryItem) {
-        viewModelScope.launch {
-            repository.markAsForgot(item)
-        }
+        reviewAgain(item)
+    }
+
+    fun markAsHard(item: MemoryItem) {
+        reviewHard(item)
+    }
+
+    fun markAsEasy(item: MemoryItem) {
+        reviewEasy(item)
+    }
+
+    fun markAsGood(item: MemoryItem) {
+        reviewGood(item)
     }
 
     /**

@@ -29,71 +29,76 @@ class DefaultImportService @Inject constructor(
 ) : ImportService {
 
     override suspend fun importCsv(input: InputStream): ImportReport {
-        val reader = BufferedReader(InputStreamReader(input))
-        val headerLine = reader.readLine() ?: return ImportReport(0, 0, 1, listOf(ImportError(1, "Empty CSV")))
-        val headers = parseCsvLine(headerLine).map { it.trim().lowercase() }
-        val index = headers.withIndex().associate { it.value to it.index }
+        BufferedReader(InputStreamReader(input)).use { reader ->
+            val headerLine = reader.readLine()
+                ?: return ImportReport(0, 0, 1, listOf(ImportError(1, "Empty CSV")))
+            val headers = parseCsvLine(headerLine).map { it.trim().lowercase() }
+            val index = headers.withIndex().associate { it.value to it.index }
 
-        var lineNo = 1
-        var imported = 0
-        var skipped = 0
-        val errors = mutableListOf<ImportError>()
+            var lineNo = 1
+            var imported = 0
+            var skipped = 0
+            val errors = mutableListOf<ImportError>()
 
-        val defaultCurveId = reviewCurveDao.getDefaultCurve()?.id
-        val now = System.currentTimeMillis()
-        val firstIntervalMs = 5L * 60_000L
+            val defaultCurveId = reviewCurveDao.getDefaultCurve()?.id
+            val now = System.currentTimeMillis()
+            val firstIntervalMs = 5L * 60_000L
 
-        reader.forEachLine { line ->
-            lineNo += 1
-            if (line.isBlank()) return@forEachLine
-            try {
-                val cols = parseCsvLine(line)
-                val title = getColumn(cols, index, "title").ifBlank { throw IllegalArgumentException("title is required") }
-                val content = getColumn(cols, index, "content")
-                val notebookName = getColumn(cols, index, "notebook").ifBlank { "默认生词本" }
-                val tagsRaw = getColumn(cols, index, "tags")
-                val stage = getColumn(cols, index, "stage").toIntOrNull()?.coerceAtLeast(0) ?: 0
-                val nextReviewTime = getColumn(cols, index, "next_review_time").toLongOrNull()
-                    ?: now + firstIntervalMs
+            var line = reader.readLine()
+            while (line != null) {
+                lineNo += 1
+                if (line.isNotBlank()) {
+                    try {
+                        val cols = parseCsvLine(line)
+                        val title = getColumn(cols, index, "title")
+                            .ifBlank { throw IllegalArgumentException("title is required") }
+                        val content = getColumn(cols, index, "content")
+                        val notebookName = getColumn(cols, index, "notebook").ifBlank { "默认生词本" }
+                        val tagsRaw = getColumn(cols, index, "tags")
+                        val stage = getColumn(cols, index, "stage").toIntOrNull()?.coerceAtLeast(0) ?: 0
+                        val nextReviewTime = getColumn(cols, index, "next_review_time").toLongOrNull()
+                            ?: now + firstIntervalMs
 
-                val notebookId = ensureNotebook(notebookName)
-                val existingId = memoryItemDao.findIdByDedup(notebookId, title, content)
-                if (existingId != null) {
-                    skipped += 1
-                    return@forEachLine
+                        val notebookId = ensureNotebook(notebookName)
+                        val existingId = memoryItemDao.findIdByDedup(notebookId, title, content)
+                        if (existingId != null) {
+                            skipped += 1
+                        } else {
+                            val item = MemoryItem(
+                                notebookId = notebookId,
+                                curveId = defaultCurveId,
+                                title = title,
+                                content = content,
+                                status = MemoryItemStatus.REVIEWING,
+                                stageIndex = stage,
+                                nextReviewTime = max(nextReviewTime, now),
+                                lastReviewTime = now,
+                                createdAt = now,
+                                updatedAt = now,
+                                sourceType = "csv_import"
+                            )
+                            val itemId = memoryItemDao.insert(item)
+
+                            val tagIds = ensureTags(tagsRaw)
+                            if (tagIds.isNotEmpty()) {
+                                memoryItemTagDao.replaceItemTags(itemId, tagIds)
+                            }
+                            imported += 1
+                        }
+                    } catch (e: Exception) {
+                        errors.add(ImportError(lineNo, e.message ?: "Invalid row"))
+                    }
                 }
-
-                val item = MemoryItem(
-                    notebookId = notebookId,
-                    curveId = defaultCurveId,
-                    title = title,
-                    content = content,
-                    status = MemoryItemStatus.REVIEWING,
-                    stageIndex = stage,
-                    nextReviewTime = max(nextReviewTime, now),
-                    lastReviewTime = now,
-                    createdAt = now,
-                    updatedAt = now,
-                    sourceType = "csv_import"
-                )
-                val itemId = memoryItemDao.insert(item)
-
-                val tagIds = ensureTags(tagsRaw)
-                if (tagIds.isNotEmpty()) {
-                    memoryItemTagDao.replaceItemTags(itemId, tagIds)
-                }
-                imported += 1
-            } catch (e: Exception) {
-                errors.add(ImportError(lineNo, e.message ?: "Invalid row"))
+                line = reader.readLine()
             }
-        }
 
-        return ImportReport(
-            imported = imported,
-            skipped = skipped,
-            failed = errors.size,
-            errors = errors
-        )
+            return ImportReport(
+                imported = imported,
+                skipped = skipped,
+                failed = errors.size,
+                errors = errors
+            )
+        }
     }
 
     override suspend fun importAnki(input: InputStream): ImportReport {

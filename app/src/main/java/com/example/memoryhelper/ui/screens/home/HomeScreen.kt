@@ -1454,6 +1454,12 @@ private fun ModernHeader(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                Text(
+                    text = "Home shows due reviews first. Use Plan to pace toward the exam.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
             }
 
             // Right: Circular Progress + Search

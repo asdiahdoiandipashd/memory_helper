@@ -28,11 +28,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -69,12 +70,15 @@ import com.example.memoryhelper.ui.theme.SuccessGreen
 @Composable
 fun FlashcardScreen(
     items: List<MemoryItem>,
-    onRemember: (MemoryItem) -> Unit,
-    onForgot: (MemoryItem) -> Unit,
+    onAgain: (MemoryItem, Long) -> Unit,
+    onHard: (MemoryItem, Long) -> Unit,
+    onGood: (MemoryItem, Long) -> Unit,
+    onEasy: (MemoryItem, Long) -> Unit,
     onComplete: () -> Unit
 ) {
     var currentIndex by remember { mutableIntStateOf(0) }
     var isFlipped by remember { mutableStateOf(false) }
+    var cardStartedAt by remember(currentIndex) { mutableLongStateOf(System.currentTimeMillis()) }
 
     if (currentIndex >= items.size) {
         CompletionScreen(
@@ -137,14 +141,24 @@ fun FlashcardScreen(
                 label = "buttons"
             ) { flipped ->
                 if (flipped) {
-                    ActionButtonsRow(
-                        onForgot = {
-                            onForgot(currentItem)
+                    ActionButtonsGrid(
+                        onAgain = {
+                            onAgain(currentItem, System.currentTimeMillis() - cardStartedAt)
                             currentIndex++
                             isFlipped = false
                         },
-                        onRemember = {
-                            onRemember(currentItem)
+                        onHard = {
+                            onHard(currentItem, System.currentTimeMillis() - cardStartedAt)
+                            currentIndex++
+                            isFlipped = false
+                        },
+                        onGood = {
+                            onGood(currentItem, System.currentTimeMillis() - cardStartedAt)
+                            currentIndex++
+                            isFlipped = false
+                        },
+                        onEasy = {
+                            onEasy(currentItem, System.currentTimeMillis() - cardStartedAt)
                             currentIndex++
                             isFlipped = false
                         }
@@ -375,73 +389,98 @@ private fun BackContent(
 }
 
 /**
- * Action buttons row - Large circular buttons.
+ * Grade buttons shown after reveal.
  */
 @Composable
-private fun ActionButtonsRow(
-    onForgot: () -> Unit,
-    onRemember: () -> Unit
+private fun ActionButtonsGrid(
+    onAgain: () -> Unit,
+    onHard: () -> Unit,
+    onGood: () -> Unit,
+    onEasy: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Forgot button - Large Red Circle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            GradeActionButton(
+                label = stringResource(R.string.review_again),
+                color = ErrorCoral,
+                icon = Icons.Default.Close,
+                onClick = onAgain
+            )
+            GradeActionButton(
+                label = stringResource(R.string.review_hard),
+                color = Color(0xFFF6A623),
+                icon = Icons.Outlined.Refresh,
+                onClick = onHard
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            GradeActionButton(
+                label = stringResource(R.string.review_good),
+                color = SuccessGreen,
+                icon = Icons.Default.Check,
+                onClick = onGood
+            )
+            GradeActionButton(
+                label = stringResource(R.string.review_easy),
+                color = PrimaryBlue,
+                icon = Icons.Default.CheckCircle,
+                onClick = onEasy
+            )
+        }
+    }
+}
+
+@Composable
+private fun GradeActionButton(
+    label: String,
+    color: Color,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             modifier = Modifier
-                .size(80.dp)
+                .size(72.dp)
                 .shadow(
-                    elevation = 12.dp,
+                    elevation = 10.dp,
                     shape = CircleShape,
                     clip = false
                 ),
             shape = CircleShape,
-            color = ErrorCoral,
-            onClick = onForgot
+            color = color,
+            onClick = onClick
         ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
                 Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.forgot),
-                    modifier = Modifier.size(40.dp),
+                    imageVector = icon,
+                    contentDescription = label,
+                    modifier = Modifier.size(34.dp),
                     tint = Color.White
                 )
             }
         }
-
-        Spacer(modifier = Modifier.width(48.dp))
-
-        // Remember button - Large Green Circle
-        Surface(
-            modifier = Modifier
-                .size(80.dp)
-                .shadow(
-                    elevation = 12.dp,
-                    shape = CircleShape,
-                    clip = false
-                ),
-            shape = CircleShape,
-            color = SuccessGreen,
-            onClick = onRemember
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = stringResource(R.string.remember),
-                    modifier = Modifier.size(40.dp),
-                    tint = Color.White
-                )
-            }
-        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.White,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
@@ -56,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.memoryhelper.ui.screens.exam.ExamScreen
 import com.example.memoryhelper.ui.screens.flashcard.FlashcardScreen
 import com.example.memoryhelper.ui.screens.home.HomeScreen
 import com.example.memoryhelper.ui.screens.home.HomeViewModel
@@ -70,6 +72,7 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 sealed class Screen(val route: String, val titleRes: Int) {
     data object Home : Screen("home", R.string.nav_home)
+    data object Exam : Screen("exam", R.string.nav_exam)
     data object Todo : Screen("todo", R.string.nav_todo)
     data object Stats : Screen("stats", R.string.nav_stats)
     data object Settings : Screen("settings", R.string.nav_settings)
@@ -151,6 +154,22 @@ private fun MainContent() {
                     selected = selectedTab == 1,
                     onClick = {
                         selectedTab = 1
+                        navController.navigate(Screen.Exam.route) {
+                            popUpTo(Screen.Home.route)
+                        }
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Rounded.DateRange,
+                            contentDescription = stringResource(R.string.nav_exam)
+                        )
+                    },
+                    label = { Text(stringResource(R.string.nav_exam)) }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 2,
+                    onClick = {
+                        selectedTab = 2
                         navController.navigate(Screen.Todo.route) {
                             popUpTo(Screen.Home.route)
                         }
@@ -164,9 +183,9 @@ private fun MainContent() {
                     label = { Text(stringResource(R.string.nav_todo)) }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == 2,
+                    selected = selectedTab == 3,
                     onClick = {
-                        selectedTab = 2
+                        selectedTab = 3
                         navController.navigate(Screen.Stats.route) {
                             popUpTo(Screen.Home.route)
                         }
@@ -180,9 +199,9 @@ private fun MainContent() {
                     label = { Text(stringResource(R.string.nav_stats)) }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == 3,
+                    selected = selectedTab == 4,
                     onClick = {
-                        selectedTab = 3
+                        selectedTab = 4
                         navController.navigate(Screen.Settings.route) {
                             popUpTo(Screen.Home.route)
                         }
@@ -235,6 +254,9 @@ private fun MainContent() {
                 composable(Screen.Todo.route) {
                     TodoScreen()
                 }
+                composable(Screen.Exam.route) {
+                    ExamScreen()
+                }
                 composable(Screen.Stats.route) {
                     StatsScreen()
                 }
@@ -254,8 +276,10 @@ private fun MainContent() {
 
                     FlashcardScreen(
                         items = dueItems,
-                        onRemember = { homeViewModel.markAsRemembered(it) },
-                        onForgot = { homeViewModel.markAsForgot(it) },
+                        onAgain = { item, responseMs -> homeViewModel.reviewAgain(item, responseMs) },
+                        onHard = { item, responseMs -> homeViewModel.reviewHard(item, responseMs) },
+                        onGood = { item, responseMs -> homeViewModel.reviewGood(item, responseMs) },
+                        onEasy = { item, responseMs -> homeViewModel.reviewEasy(item, responseMs) },
                         onComplete = { navController.popBackStack() }
                     )
                 }

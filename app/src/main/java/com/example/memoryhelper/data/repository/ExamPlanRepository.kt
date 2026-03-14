@@ -1,6 +1,7 @@
 package com.example.memoryhelper.data.repository
 
 import com.example.memoryhelper.data.local.dao.DailyPlanItemDao
+import com.example.memoryhelper.data.local.dao.DailyPlanRow
 import com.example.memoryhelper.data.local.dao.ExamPlanDao
 import com.example.memoryhelper.data.local.dao.ExamSubjectDao
 import com.example.memoryhelper.data.local.dao.MemoryItemDao
@@ -92,6 +93,10 @@ class ExamPlanRepository @Inject constructor(
 
     fun getDailyPlanFlow(planId: Long, dateEpochDay: Long): Flow<List<DailyPlanItem>> {
         return dailyPlanItemDao.getByPlanAndDateFlow(planId, dateEpochDay)
+    }
+
+    fun getDailyPlanRowsFlow(planId: Long, dateEpochDay: Long): Flow<List<DailyPlanRow>> {
+        return dailyPlanItemDao.getPlanRowsFlow(planId, dateEpochDay)
     }
 
     suspend fun getActivePlan(): ExamPlan? = examPlanDao.getActivePlan()
