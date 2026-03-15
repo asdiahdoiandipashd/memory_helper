@@ -105,9 +105,11 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToFlashcard: (List<MemoryItem>) -> Unit = {}
+    onNavigateToFlashcard: (List<MemoryItem>) -> Unit = {},
+    onNavigateToExam: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val activeExamPlan by viewModel.activeExamPlan.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val notebooks by viewModel.notebooks.collectAsState()
     val selectedNotebookId by viewModel.selectedNotebookId.collectAsState()
@@ -186,6 +188,14 @@ fun HomeScreen(
                     progress = uiState.dailyProgress,
                     onSearchClick = { isSearchExpanded = true }
                 )
+
+                activeExamPlan?.let { plan ->
+                    ExamPlanBanner(
+                        plan = plan,
+                        onClick = onNavigateToExam,
+                        modifier = Modifier.padding(horizontal = AppSpacing.md)
+                    )
+                }
             }
 
             // Notebook Filter Bar
@@ -1177,6 +1187,52 @@ private fun ReviewDialog(
             }
         }
     )
+}
+
+@Composable
+private fun ExamPlanBanner(
+    plan: ActiveExamPlanSummary,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AppCard(
+        modifier = modifier.fillMaxWidth(),
+        tone = AppCardTone.Accent,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Exam plan in progress",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                Text(
+                    text = plan.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                Text(
+                    text = "${plan.daysLeft} days left | ${plan.subjectCount} subjects | ${plan.todayPlanCount} planned today",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                )
+            }
+            Icon(
+                imageVector = Icons.Rounded.DateRange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
 }
 
 @Composable

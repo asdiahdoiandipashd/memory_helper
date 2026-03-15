@@ -248,6 +248,12 @@ private fun MainContent() {
                     HomeScreen(
                         onNavigateToFlashcard = { items ->
                             navController.navigate(Screen.Flashcard.route)
+                        },
+                        onNavigateToExam = {
+                            selectedTab = 1
+                            navController.navigate(Screen.Exam.route) {
+                                popUpTo(Screen.Home.route)
+                            }
                         }
                     )
                 }

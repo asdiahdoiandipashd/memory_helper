@@ -251,7 +251,7 @@ class SettingsViewModel @Inject constructor(
                         restoreInProgress = false,
                         restoreResult = RestoreResult(
                             success = report.imported > 0 || report.skipped > 0,
-                            message = buildCsvImportMessage(report)
+                            message = buildImportMessage("CSV import", report)
                         )
                     )
                 }
@@ -263,6 +263,37 @@ class SettingsViewModel @Inject constructor(
                         restoreResult = RestoreResult(
                             success = false,
                             message = "CSV import failed: ${throwable.message ?: "Unknown error"}"
+                        )
+                    )
+                }
+            }
+        )
+    }
+
+    suspend fun importFromAnki(inputStream: InputStream) {
+        _uiState.update { it.copy(restoreInProgress = true, restoreResult = null) }
+
+        runCatching {
+            importService.importAnki(inputStream)
+        }.fold(
+            onSuccess = { report ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        restoreInProgress = false,
+                        restoreResult = RestoreResult(
+                            success = report.imported > 0 || report.skipped > 0,
+                            message = buildImportMessage("Anki import", report)
+                        )
+                    )
+                }
+            },
+            onFailure = { throwable ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        restoreInProgress = false,
+                        restoreResult = RestoreResult(
+                            success = false,
+                            message = "Anki import failed: ${throwable.message ?: "Unknown error"}"
                         )
                     )
                 }
@@ -298,8 +329,8 @@ class SettingsViewModel @Inject constructor(
         return backupService.getMimeType(format)
     }
 
-    private fun buildCsvImportMessage(report: ImportReport): String {
-        val summary = "CSV import finished: ${report.imported} imported, ${report.skipped} skipped, ${report.failed} failed."
+    private fun buildImportMessage(prefix: String, report: ImportReport): String {
+        val summary = "$prefix finished: ${report.imported} imported, ${report.skipped} skipped, ${report.failed} failed."
         if (report.errors.isEmpty()) {
             return summary
         }

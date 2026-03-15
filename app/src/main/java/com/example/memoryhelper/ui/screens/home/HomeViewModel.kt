@@ -9,15 +9,18 @@ import androidx.lifecycle.viewModelScope
 import com.example.memoryhelper.R
 import com.example.memoryhelper.data.local.entity.MemoryItem
 import com.example.memoryhelper.data.local.entity.MemoryItemStatus
+import com.example.memoryhelper.data.repository.ExamPlanRepository
 import com.example.memoryhelper.data.repository.MemoryRepository
 import com.example.memoryhelper.domain.scheduler.ReviewGradeOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -65,10 +68,19 @@ data class HomeUiState(
         get() = allItems.isEmpty()
 }
 
+data class ActiveExamPlanSummary(
+    val planId: Long,
+    val name: String,
+    val daysLeft: Int,
+    val subjectCount: Int,
+    val todayPlanCount: Int
+)
+
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: MemoryRepository,
+    private val examPlanRepository: ExamPlanRepository,
     private val application: Application
 ) : ViewModel() {
 
@@ -95,6 +107,32 @@ class HomeViewModel @Inject constructor(
 
     private val _selectedNotebookId = MutableStateFlow<Long?>(null)
     val selectedNotebookId: StateFlow<Long?> = _selectedNotebookId.asStateFlow()
+
+    val activeExamPlan = examPlanRepository.getPlansFlow()
+        .flatMapLatest { plans ->
+            val activePlan = plans.firstOrNull { it.isActive }
+            if (activePlan == null) {
+                flowOf(null)
+            } else {
+                combine(
+                    examPlanRepository.getSubjectsFlow(activePlan.id),
+                    examPlanRepository.getDailyPlanRowsFlow(activePlan.id, LocalDate.now().toEpochDay())
+                ) { subjects, todayPlan ->
+                    ActiveExamPlanSummary(
+                        planId = activePlan.id,
+                        name = activePlan.name,
+                        daysLeft = (activePlan.examDateEpochDay - LocalDate.now().toEpochDay()).toInt().coerceAtLeast(0),
+                        subjectCount = subjects.size,
+                        todayPlanCount = todayPlan.size
+                    )
+                }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
     /**
      * UI state that combines items with today's review count
