@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -93,6 +94,12 @@ fun ExamScreen(
                 }
             }
 
+            if (activePlan == null) {
+                item {
+                    PlanSetupGuideCard()
+                }
+            }
+
             if (uiState.subjects.isNotEmpty()) {
                 item {
                     SubjectSection(subjects = uiState.subjects, notebooks = uiState.notebooks)
@@ -157,11 +164,70 @@ private fun EmptyPlanCard(
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(AppSpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            PlanMetricChip(
+                modifier = Modifier.weight(1f),
+                label = "Exam date",
+                value = "Set target"
+            )
+            PlanMetricChip(
+                modifier = Modifier.weight(1f),
+                label = "Budget",
+                value = "Daily load"
+            )
+            PlanMetricChip(
+                modifier = Modifier.weight(1f),
+                label = "Subjects",
+                value = "Weighted"
+            )
+        }
+        Spacer(modifier = Modifier.height(AppSpacing.md))
         PrimaryButton(
             text = "Create Plan",
             onClick = onCreate,
             modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+@Composable
+private fun PlanSetupGuideCard() {
+    AppCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = AppCardTone.Surface
+    ) {
+        Text(
+            text = "How this screen works",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xxs))
+        Text(
+            text = "The planning flow is short by design: define the target, bind subjects to notebooks, then generate today's queue.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)) {
+            SetupStep(
+                index = "01",
+                title = "Create the target exam",
+                supporting = "Set the exam date, your base daily budget, and how much overdue debt can spill into today."
+            )
+            SetupStep(
+                index = "02",
+                title = "Add weighted subjects",
+                supporting = "Tie each subject to a notebook so planning can distribute work by importance and backlog."
+            )
+            SetupStep(
+                index = "03",
+                title = "Generate today's plan",
+                supporting = "Must-do items are filled first, then remaining capacity is used for recommended work."
+            )
+        }
     }
 }
 
@@ -396,7 +462,7 @@ private fun PlanMetricChip(
 private fun PlanMiniPill(
     label: String
 ) {
-    androidx.compose.material3.Surface(
+    Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface
     ) {
@@ -406,6 +472,44 @@ private fun PlanMiniPill(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun SetupStep(
+    index: String,
+    title: String,
+    supporting: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            Text(
+                text = index,
+                modifier = Modifier.padding(horizontal = AppSpacing.sm, vertical = AppSpacing.xs),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.xxs))
+            Text(
+                text = supporting,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

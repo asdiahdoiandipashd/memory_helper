@@ -1,5 +1,6 @@
 package com.example.memoryhelper.ui.screens.stats
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,13 +36,8 @@ import com.example.memoryhelper.ui.designsystem.AppCard
 import com.example.memoryhelper.ui.designsystem.AppCardTone
 import com.example.memoryhelper.ui.designsystem.AppSpacing
 import com.example.memoryhelper.ui.designsystem.AppTopBar
-import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStartAxis
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
-import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
+import com.example.memoryhelper.ui.theme.PrimaryBlue
+import com.example.memoryhelper.ui.theme.SecondaryTeal
 import java.util.Locale
 
 @Composable
@@ -309,8 +307,7 @@ private fun ReviewVolumeCard(
         Spacer(modifier = Modifier.height(AppSpacing.md))
 
         if (uiState.totalReviews > 0) {
-            val dataPoints = uiState.chartData.associate { it.date to it.count }
-            ReviewChart(dataPoints = dataPoints)
+            ReviewChart(dataPoints = uiState.chartData)
         } else {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -402,27 +399,70 @@ private fun GradeDistributionCard(
 
 @Composable
 private fun ReviewChart(
-    dataPoints: Map<String, Int>
+    dataPoints: List<ChartDataPoint>
 ) {
-    val modelProducer = CartesianChartModelProducer.build()
+    val maxCount = dataPoints.maxOfOrNull { it.count }?.coerceAtLeast(1) ?: 1
 
-    LaunchedEffect(dataPoints) {
-        modelProducer.tryRunTransaction {
-            columnSeries {
-                series(dataPoints.values.toList())
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            dataPoints.forEachIndexed { index, point ->
+                val ratio = point.count.toFloat() / maxCount.toFloat()
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    Text(
+                        text = point.count.toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(170.dp),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height((170f * ratio).coerceAtLeast(8f).dp)
+                                .background(
+                                    color = if (index == dataPoints.lastIndex) PrimaryBlue else SecondaryTeal.copy(alpha = 0.65f),
+                                    shape = RoundedCornerShape(
+                                        topStart = 10.dp,
+                                        topEnd = 10.dp,
+                                        bottomStart = 10.dp,
+                                        bottomEnd = 10.dp
+                                    )
+                                )
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(AppSpacing.xs))
+                    Text(
+                        text = formatChartLabel(point.date),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
+        Text(
+            text = "Latest day is highlighted in blue.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
-
-    CartesianChartHost(
-        chart = rememberCartesianChart(
-            rememberColumnCartesianLayer(),
-            startAxis = rememberStartAxis(),
-            bottomAxis = rememberBottomAxis(),
-        ),
-        modelProducer = modelProducer,
-        modifier = Modifier.fillMaxSize()
-    )
 }
 
 private fun formatPercent(value: Float): String {
@@ -466,4 +506,13 @@ private fun weakRecallCount(uiState: StatsUiState): Int {
     return uiState.gradeBreakdown
         .filter { it.grade == ReviewGradeOption.AGAIN || it.grade == ReviewGradeOption.HARD }
         .sumOf { it.count }
+}
+
+private fun formatChartLabel(date: String): String {
+    val parts = date.split("-")
+    return when {
+        parts.size >= 3 -> "${parts[1]}/${parts[2]}"
+        parts.size == 2 -> "${parts[0]}/${parts[1]}"
+        else -> date.takeLast(5)
+    }
 }
