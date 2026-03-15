@@ -20,6 +20,17 @@ import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.roundToLong
+
+data class ReviewStatsSummary(
+    val totalReviews: Int,
+    val overdueReviews: Int,
+    val averageResponseMs: Long,
+    val gradeCounts: Map<ReviewGradeOption, Int>
+) {
+    val overdueRate: Float
+        get() = if (totalReviews == 0) 0f else overdueReviews.toFloat() / totalReviews.toFloat()
+}
 
 @Singleton
 class MemoryRepository @Inject constructor(
@@ -73,6 +84,16 @@ class MemoryRepository @Inject constructor(
         calendar.set(Calendar.MINUTE, 59)
         calendar.set(Calendar.SECOND, 59)
         calendar.set(Calendar.MILLISECOND, 999)
+        return calendar.timeInMillis
+    }
+
+    private fun getStartOfDay(daysAgo: Int): Long {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, -daysAgo)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
         return calendar.timeInMillis
     }
 
@@ -219,13 +240,7 @@ class MemoryRepository @Inject constructor(
         }
 
         // Get start of 7 days ago (midnight)
-        calendar.timeInMillis = System.currentTimeMillis()
-        calendar.add(Calendar.DAY_OF_YEAR, -6)
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        val startTime = calendar.timeInMillis
+        val startTime = getStartOfDay(daysAgo = 6)
 
         // Query logs from the last 7 days
         val logs = reviewLogDao.getLogsSince(startTime)
@@ -237,6 +252,25 @@ class MemoryRepository @Inject constructor(
         }
 
         return result
+    }
+
+    suspend fun getReviewStatsSummaryForLast7Days(): ReviewStatsSummary {
+        val startTime = getStartOfDay(daysAgo = 6)
+        val totalReviews = reviewLogDao.countReviewsSince(startTime)
+        val overdueReviews = reviewLogDao.countOverdueReviews(startTime)
+        val averageResponseMs = reviewLogDao.getAverageResponseMsSince(startTime)?.roundToLong() ?: 0L
+
+        val gradeCounts = ReviewGradeOption.entries.associateWith { 0 }.toMutableMap()
+        reviewLogDao.getGradeDistribution(startTime).forEach { row ->
+            gradeCounts[ReviewGradeOption.fromDb(row.grade)] = row.cnt
+        }
+
+        return ReviewStatsSummary(
+            totalReviews = totalReviews,
+            overdueReviews = overdueReviews,
+            averageResponseMs = averageResponseMs,
+            gradeCounts = gradeCounts
+        )
     }
 
     /**

@@ -12,6 +12,8 @@ import androidx.lifecycle.ViewModel
 import com.example.memoryhelper.data.backup.BackupFormat
 import com.example.memoryhelper.data.backup.BackupService
 import com.example.memoryhelper.data.backup.ImportResult
+import com.example.memoryhelper.domain.importing.ImportReport
+import com.example.memoryhelper.domain.importing.ImportService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,7 +68,8 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val backupService: BackupService
+    private val backupService: BackupService,
+    private val importService: ImportService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -236,6 +239,37 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    suspend fun importFromCsv(inputStream: InputStream) {
+        _uiState.update { it.copy(restoreInProgress = true, restoreResult = null) }
+
+        runCatching {
+            importService.importCsv(inputStream)
+        }.fold(
+            onSuccess = { report ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        restoreInProgress = false,
+                        restoreResult = RestoreResult(
+                            success = report.imported > 0 || report.skipped > 0,
+                            message = buildCsvImportMessage(report)
+                        )
+                    )
+                }
+            },
+            onFailure = { throwable ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        restoreInProgress = false,
+                        restoreResult = RestoreResult(
+                            success = false,
+                            message = "CSV import failed: ${throwable.message ?: "Unknown error"}"
+                        )
+                    )
+                }
+            }
+        )
+    }
+
     /**
      * Clear backup result
      */
@@ -262,5 +296,17 @@ class SettingsViewModel @Inject constructor(
      */
     fun getBackupMimeType(format: BackupFormat): String {
         return backupService.getMimeType(format)
+    }
+
+    private fun buildCsvImportMessage(report: ImportReport): String {
+        val summary = "CSV import finished: ${report.imported} imported, ${report.skipped} skipped, ${report.failed} failed."
+        if (report.errors.isEmpty()) {
+            return summary
+        }
+
+        val detail = report.errors.take(3).joinToString(separator = " ") { error ->
+            "Line ${error.line}: ${error.message}."
+        }
+        return "$summary $detail"
     }
 }

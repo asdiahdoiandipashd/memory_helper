@@ -48,8 +48,6 @@ import androidx.compose.ui.unit.dp
 import com.example.memoryhelper.R
 import com.example.memoryhelper.data.backup.BackupFormat
 import kotlinx.coroutines.launch
-import java.io.InputStream
-import java.io.OutputStream
 
 @Composable
 fun BackupRestoreSection(
@@ -93,6 +91,18 @@ fun BackupRestoreSection(
             scope.launch {
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     viewModel.importFromJson(inputStream)
+                }
+            }
+        }
+    }
+
+    val openCsvDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    viewModel.importFromCsv(inputStream)
                 }
             }
         }
@@ -247,7 +257,7 @@ fun BackupRestoreSection(
 
                 Button(
                     onClick = {
-                        openDocumentLauncher.launch(arrayOf("application/json", "text/csv"))
+                        openDocumentLauncher.launch(arrayOf("application/json"))
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.restoreInProgress
@@ -259,6 +269,57 @@ fun BackupRestoreSection(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.import_backup))
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FileUpload,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "CSV Card Import",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Import cards with title, content, notebook, tags, stage, and next_review_time columns. Duplicate title-content pairs in the same notebook are skipped.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        openCsvDocumentLauncher.launch(arrayOf("text/*", "text/csv"))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.restoreInProgress
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FileUpload,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Import CSV Cards")
                 }
             }
         }

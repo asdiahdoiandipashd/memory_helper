@@ -90,6 +90,15 @@ interface ReviewLogDao {
         """
     )
     suspend fun countOverdueReviews(startTime: Long): Int
+
+    @Query(
+        """
+        SELECT AVG(response_ms) FROM review_logs
+        WHERE actual_review_time >= :startTime
+          AND response_ms > 0
+        """
+    )
+    suspend fun getAverageResponseMsSince(startTime: Long): Double?
 }
 
 data class GradeCountRow(

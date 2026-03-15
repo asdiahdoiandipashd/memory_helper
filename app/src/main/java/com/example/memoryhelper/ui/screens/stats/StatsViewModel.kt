@@ -3,6 +3,7 @@ package com.example.memoryhelper.ui.screens.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memoryhelper.data.repository.MemoryRepository
+import com.example.memoryhelper.domain.scheduler.ReviewGradeOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,13 +19,22 @@ data class ChartDataPoint(
     val count: Int
 )
 
+data class GradeBreakdownUi(
+    val grade: ReviewGradeOption,
+    val count: Int
+)
+
 /**
  * UI State for the Stats screen.
  */
 data class StatsUiState(
     val isLoading: Boolean = true,
     val chartData: List<ChartDataPoint> = emptyList(),
-    val totalReviews: Int = 0
+    val totalReviews: Int = 0,
+    val overdueReviews: Int = 0,
+    val overdueRate: Float = 0f,
+    val averageResponseMs: Long = 0L,
+    val gradeBreakdown: List<GradeBreakdownUi> = emptyList()
 )
 
 @HiltViewModel
@@ -44,17 +54,27 @@ class StatsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             val reviewCounts = repository.getReviewCountsForLast7Days()
+            val summary = repository.getReviewStatsSummaryForLast7Days()
 
             // Convert to ordered list of ChartDataPoint
             val chartData = reviewCounts.entries
                 .map { ChartDataPoint(date = it.key, count = it.value) }
 
-            val totalReviews = chartData.sumOf { it.count }
+            val gradeBreakdown = ReviewGradeOption.entries.map { grade ->
+                GradeBreakdownUi(
+                    grade = grade,
+                    count = summary.gradeCounts[grade] ?: 0
+                )
+            }
 
             _uiState.value = StatsUiState(
                 isLoading = false,
                 chartData = chartData,
-                totalReviews = totalReviews
+                totalReviews = summary.totalReviews,
+                overdueReviews = summary.overdueReviews,
+                overdueRate = summary.overdueRate,
+                averageResponseMs = summary.averageResponseMs,
+                gradeBreakdown = gradeBreakdown
             )
         }
     }
