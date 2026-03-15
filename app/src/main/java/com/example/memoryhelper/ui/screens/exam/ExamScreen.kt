@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -140,13 +141,19 @@ private fun EmptyPlanCard(
         tone = AppCardTone.Accent
     ) {
         Text(
+            text = "Exam workspace",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xs))
+        Text(
             text = "No study plan yet",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(AppSpacing.xs))
         Text(
-            text = "Create an exam target first, then generate a daily study plan.",
+            text = "Create an exam target first. We will use it to balance overdue work, subject weight, and daily capacity.",
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(AppSpacing.md))
@@ -174,19 +181,56 @@ private fun PlanSummaryCard(
         tone = AppCardTone.Accent
     ) {
         Text(
-            text = plan.name,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            text = "Active plan",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
         )
         Spacer(modifier = Modifier.height(AppSpacing.xs))
-        Text("Exam date: ${LocalDate.ofEpochDay(plan.examDateEpochDay)}")
-        Text("Days left: $daysLeft")
-        Text("Daily budget: ${plan.dailyBudget}")
-        Text("Overdue cap: ${plan.overdueCompensationLimit}")
-        Text("Subjects: ${subjects.size}")
-        Text("Today items: $planCount")
+        Text(
+            text = plan.name,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.sm))
+        Text(
+            text = "Exam date ${LocalDate.ofEpochDay(plan.examDateEpochDay)}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.88f)
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            PlanMetricChip(
+                modifier = Modifier.weight(1f),
+                label = "Days left",
+                value = "$daysLeft"
+            )
+            PlanMetricChip(
+                modifier = Modifier.weight(1f),
+                label = "Subjects",
+                value = "${subjects.size}"
+            )
+            PlanMetricChip(
+                modifier = Modifier.weight(1f),
+                label = "Today",
+                value = "$planCount"
+            )
+        }
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        Text(
+            text = "Daily budget ${plan.dailyBudget}  |  Overdue cap ${plan.overdueCompensationLimit}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+        )
         generatedCount?.let {
-            Text("Last generation: $it items")
+            Spacer(modifier = Modifier.height(AppSpacing.xxs))
+            Text(
+                text = "Last generation $it items",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            )
         }
         Spacer(modifier = Modifier.height(AppSpacing.md))
         Row(
@@ -218,8 +262,14 @@ private fun SubjectSection(
     ) {
         Text(
             text = "Subjects",
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xxs))
+        Text(
+            text = "Weight each subject against a notebook so the generated plan can spread work intentionally.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(AppSpacing.sm))
         Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {
@@ -230,9 +280,21 @@ private fun SubjectSection(
                     tone = AppCardTone.Elevated,
                     padding = PaddingValues(AppSpacing.sm)
                 ) {
-                    Text(subject.name, fontWeight = FontWeight.SemiBold)
-                    Text("Weight: ${subject.weight}")
-                    Text("Notebook: $notebookName")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(subject.name, fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                            Text(
+                                text = "Notebook: $notebookName",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        PlanMiniPill(label = "W ${subject.weight}")
+                    }
                 }
             }
         }
@@ -249,8 +311,14 @@ private fun TodayPlanSection(
     ) {
         Text(
             text = "Today Plan",
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xxs))
+        Text(
+            text = "Must-do work includes overdue debt. Recommended work fills remaining capacity by subject weight.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(AppSpacing.sm))
         if (rows.isEmpty()) {
@@ -275,20 +343,69 @@ private fun TodayPlanSection(
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Text(
-                            text = buildString {
-                                append(priorityLabel(row.priority))
-                                row.subjectName?.let { subjectName ->
-                                    append(" | ")
-                                    append(subjectName)
-                                }
-                            },
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = buildString {
+                                    append(priorityLabel(row.priority))
+                                    row.subjectName?.let { subjectName ->
+                                        append(" | ")
+                                        append(subjectName)
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            PlanMiniPill(label = if (row.status == 1) "Done" else "Open")
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PlanMetricChip(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    AppCard(
+        modifier = modifier,
+        tone = AppCardTone.Elevated,
+        padding = PaddingValues(AppSpacing.sm)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xxs))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun PlanMiniPill(
+    label: String
+) {
+    androidx.compose.material3.Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = AppSpacing.sm, vertical = AppSpacing.xxs),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

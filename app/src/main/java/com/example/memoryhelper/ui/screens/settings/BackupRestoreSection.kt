@@ -1,10 +1,5 @@
 package com.example.memoryhelper.ui.screens.settings
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -15,38 +10,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.memoryhelper.R
 import com.example.memoryhelper.data.backup.BackupFormat
+import com.example.memoryhelper.ui.designsystem.AppCard
+import com.example.memoryhelper.ui.designsystem.AppCardTone
+import com.example.memoryhelper.ui.designsystem.AppSpacing
+import com.example.memoryhelper.ui.designsystem.PrimaryButton
+import com.example.memoryhelper.ui.designsystem.SecondaryButton
 import kotlinx.coroutines.launch
 
 @Composable
@@ -57,7 +48,6 @@ fun BackupRestoreSection(
     val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
 
-    // Create file launcher for export
     val createFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("*/*")
     ) { uri ->
@@ -70,7 +60,6 @@ fun BackupRestoreSection(
         }
     }
 
-    // Create CSV file launcher
     val createCsvFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
@@ -83,7 +72,6 @@ fun BackupRestoreSection(
         }
     }
 
-    // Open document launcher for import
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -122,314 +110,161 @@ fun BackupRestoreSection(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
     ) {
-        // Section header
-        Text(
-            text = stringResource(R.string.backup_restore),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Text(
-            text = stringResource(R.string.backup_description),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        // Backup card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.xxs)) {
+            Text(
+                text = "Backups and imports",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
             )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Backup,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "数据备份",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "JSON格式包含所有数据（记忆条目、分类、复习曲线、复习记录），适合完整备份和恢复。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val fileName = viewModel.generateBackupFileName(BackupFormat.JSON)
-                            createFileLauncher.launch(fileName)
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = !uiState.backupInProgress
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.export_json))
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            val fileName = viewModel.generateBackupFileName(BackupFormat.CSV)
-                            createCsvFileLauncher.launch(fileName)
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = !uiState.backupInProgress
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.export_csv))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "CSV格式仅包含记忆条目，适合在Excel中查看和分析。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = "Preserve the full workspace, move data between devices, or seed the system with cards from external tools.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
-        // Restore card
-        Card(
+        AppCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
+            tone = AppCardTone.Accent
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileUpload,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "数据恢复",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Warning message
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.backup_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        openDocumentLauncher.launch(arrayOf("application/json"))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.restoreInProgress
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileUpload,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.import_backup))
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            CardHeader(
+                icon = Icons.Default.Backup,
+                title = "Export workspace",
+                supporting = "JSON keeps the full app state. CSV is lighter and better for spreadsheet analysis."
             )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileUpload,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "CSV Card Import",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Import cards with title, content, notebook, tags, stage, and next_review_time columns. Duplicate title-content pairs in the same notebook are skipped.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = {
-                        openCsvDocumentLauncher.launch(arrayOf("text/*", "text/csv"))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.restoreInProgress
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileUpload,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Import CSV Cards")
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileUpload,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Anki Package Import",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Import basic front-back notes from .apkg files. Tags, deck names, and referenced image or audio files are brought into app storage when available.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = {
-                        openAnkiDocumentLauncher.launch(arrayOf("*/*"))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.restoreInProgress
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FileUpload,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Import Anki Package")
-                }
-            }
-        }
-
-        // Progress indicators
-        if (uiState.backupInProgress || uiState.restoreInProgress) {
-            Card(
+            Spacer(modifier = Modifier.height(AppSpacing.md))
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+            ) {
+                PrimaryButton(
+                    text = "Export JSON",
+                    onClick = {
+                        val fileName = viewModel.generateBackupFileName(BackupFormat.JSON)
+                        createFileLauncher.launch(fileName)
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = !uiState.backupInProgress
                 )
+                SecondaryButton(
+                    text = "Export CSV",
+                    onClick = {
+                        val fileName = viewModel.generateBackupFileName(BackupFormat.CSV)
+                        createCsvFileLauncher.launch(fileName)
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = !uiState.backupInProgress
+                )
+            }
+        }
+
+        AppCard(
+            modifier = Modifier.fillMaxWidth(),
+            tone = AppCardTone.Surface
+        ) {
+            CardHeader(
+                icon = Icons.Default.FileUpload,
+                title = "Restore a full backup",
+                supporting = "Use this only with a JSON export from Memory Helper. It rewrites the local workspace with the backup payload."
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
+            CalloutRow(
+                icon = Icons.Default.Warning,
+                text = "Restore is destructive for local data. Export a fresh backup first if you are unsure.",
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.md))
+            PrimaryButton(
+                text = "Import JSON backup",
+                onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.restoreInProgress
+            )
+        }
+
+        AppCard(
+            modifier = Modifier.fillMaxWidth(),
+            tone = AppCardTone.Elevated
+        ) {
+            CardHeader(
+                icon = Icons.Default.FileUpload,
+                title = "Bring cards in",
+                supporting = "Use CSV for structured imports and .apkg for basic Anki front-back cards, tags, deck names, and linked media when available."
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.md))
+            ImportSourceRow(
+                title = "CSV cards",
+                supporting = "Columns: title, content, notebook, tags, stage, next_review_time.",
+                buttonText = "Import CSV",
+                onClick = { openCsvDocumentLauncher.launch(arrayOf("text/*", "text/csv")) },
+                enabled = !uiState.restoreInProgress
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
+            ImportSourceRow(
+                title = "Anki package",
+                supporting = "Imports basic front-back notes from .apkg. Unsupported models are skipped instead of breaking the batch.",
+                buttonText = "Import .apkg",
+                onClick = { openAnkiDocumentLauncher.launch(arrayOf("*/*")) },
+                enabled = !uiState.restoreInProgress
+            )
+        }
+
+        if (uiState.backupInProgress || uiState.restoreInProgress) {
+            AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                tone = AppCardTone.Surface
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(22.dp),
                         strokeWidth = 2.dp
                     )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = if (uiState.backupInProgress) {
-                            stringResource(R.string.backup_in_progress)
-                        } else {
-                            stringResource(R.string.restore_in_progress)
-                        },
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.xxs)) {
+                        Text(
+                            text = if (uiState.backupInProgress) "Export in progress" else "Import in progress",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Large workspaces can take a moment. The operation continues until the stream finishes.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
 
-        // Backup result
         uiState.backupResult?.let { result ->
-            BackupResultCard(
-                result = result,
+            OperationResultCard(
+                title = if (result.success) "Export completed" else "Export failed",
+                message = result.message,
+                detail = result.fileName?.let { fileName -> "Saved as $fileName" },
+                success = result.success,
                 onClear = { viewModel.clearBackupResult() }
             )
         }
 
-        // Restore result
         uiState.restoreResult?.let { result ->
-            RestoreResultCard(
-                result = result,
+            OperationResultCard(
+                title = if (result.success) "Import completed" else "Import failed",
+                message = result.message,
+                detail = result.importResult?.let { importResult ->
+                    buildString {
+                        append("Items ${importResult.itemsImported} imported, ${importResult.itemsSkipped} skipped. ")
+                        append("Notebooks ${importResult.notebooksImported}, curves ${importResult.curvesImported}, logs ${importResult.logsImported}.")
+                    }
+                },
+                success = result.success,
                 onClear = { viewModel.clearRestoreResult() }
             )
         }
@@ -437,153 +272,152 @@ fun BackupRestoreSection(
 }
 
 @Composable
-private fun BackupResultCard(
-    result: BackupResult,
-    onClear: () -> Unit
+private fun CardHeader(
+    icon: ImageVector,
+    title: String,
+    supporting: String
 ) {
-    Card(
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (result.success) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            } else {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-            }
-        )
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (result.success) Icons.Default.CheckCircle else Icons.Default.Error,
-                    contentDescription = null,
-                    tint = if (result.success) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = if (result.success) stringResource(R.string.backup_success) else stringResource(R.string.backup_failed),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = result.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
             )
-
-            result.fileName?.let { fileName ->
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.file_saved_to, fileName),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                onClick = onClear,
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text(stringResource(R.string.clear_result))
-            }
+            Spacer(modifier = Modifier.height(AppSpacing.xxs))
+            Text(
+                text = supporting,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-private fun RestoreResultCard(
-    result: RestoreResult,
+private fun ImportSourceRow(
+    title: String,
+    supporting: String,
+    buttonText: String,
+    onClick: () -> Unit,
+    enabled: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.md)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.xxs))
+            Text(
+                text = supporting,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        SecondaryButton(
+            text = buttonText,
+            onClick = onClick,
+            enabled = enabled
+        )
+    }
+}
+
+@Composable
+private fun CalloutRow(
+    icon: ImageVector,
+    text: String,
+    containerColor: androidx.compose.ui.graphics.Color,
+    contentColor: androidx.compose.ui.graphics.Color
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = containerColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = AppSpacing.sm, vertical = AppSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor
+            )
+        }
+    }
+}
+
+@Composable
+private fun OperationResultCard(
+    title: String,
+    message: String,
+    detail: String?,
+    success: Boolean,
     onClear: () -> Unit
 ) {
-    Card(
+    AppCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (result.success) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            } else {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-            }
-        )
+        tone = if (success) AppCardTone.Accent else AppCardTone.Surface
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (result.success) Icons.Default.CheckCircle else Icons.Default.Error,
-                    contentDescription = null,
-                    tint = if (result.success) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = if (result.success) stringResource(R.string.restore_success) else stringResource(R.string.restore_failed),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = result.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            Icon(
+                imageVector = if (success) Icons.Default.CheckCircle else Icons.Default.Error,
+                contentDescription = null,
+                tint = if (success) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
             )
-
-            result.importResult?.let { importResult ->
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                detail?.let {
+                    Spacer(modifier = Modifier.height(AppSpacing.xxs))
                     Text(
-                        text = "导入详情：",
+                        text = it,
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Text(
-                        text = "• 记忆条目：${importResult.itemsImported} 个（跳过 ${importResult.itemsSkipped} 个）",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Text(
-                        text = "• 记忆本：${importResult.notebooksImported} 个",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Text(
-                        text = "• 复习曲线：${importResult.curvesImported} 个",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Text(
-                        text = "• 复习记录：${importResult.logsImported} 条",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (result.success) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                onClick = onClear,
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text(stringResource(R.string.clear_result))
-            }
         }
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        SecondaryButton(
+            text = "Dismiss",
+            onClick = onClear,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

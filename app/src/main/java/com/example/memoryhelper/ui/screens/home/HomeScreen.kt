@@ -93,6 +93,7 @@ import com.example.memoryhelper.ui.designsystem.AppTextField
 import com.example.memoryhelper.ui.designsystem.AppTopBar
 import com.example.memoryhelper.ui.designsystem.PrimaryButton
 import com.example.memoryhelper.ui.designsystem.SecondaryButton
+import com.example.memoryhelper.ui.theme.AccentPaper
 import com.example.memoryhelper.ui.theme.PrimaryBlue
 import com.example.memoryhelper.ui.theme.SecondaryTeal
 import com.example.memoryhelper.ui.theme.SuccessGreen
@@ -196,6 +197,12 @@ fun HomeScreen(
                         modifier = Modifier.padding(horizontal = AppSpacing.md)
                     )
                 }
+
+                DailyProgressCard(
+                    progress = uiState.dailyProgress,
+                    totalPending = uiState.overdueItems.size + uiState.todayItems.size,
+                    modifier = Modifier.padding(horizontal = AppSpacing.md)
+                )
             }
 
             // Notebook Filter Bar
@@ -561,7 +568,8 @@ fun HomeScreen(
 @Composable
 private fun DailyProgressCard(
     progress: DailyProgress,
-    totalPending: Int
+    totalPending: Int,
+    modifier: Modifier = Modifier
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.progressPercentage,
@@ -569,7 +577,7 @@ private fun DailyProgressCard(
     )
 
     AppCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         tone = if (progress.isAllDone && totalPending == 0) AppCardTone.Accent else AppCardTone.Surface,
         padding = PaddingValues(AppSpacing.md)
     ) {
@@ -581,7 +589,7 @@ private fun DailyProgressCard(
                 Column {
                     Text(
                         text = stringResource(R.string.todays_progress),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(AppSpacing.xxs))
@@ -1464,7 +1472,6 @@ private fun ModernHeader(
     progress: DailyProgress,
     onSearchClick: () -> Unit
 ) {
-    // Time-based greeting
     val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
     val greetingResource = when (hour) {
         in 0..11 -> R.string.greeting_morning
@@ -1472,16 +1479,18 @@ private fun ModernHeader(
         else -> R.string.greeting_evening
     }
 
-    // Gradient background for header
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                Brush.verticalGradient(
+                Brush.linearGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        AccentPaper,
+                        MaterialTheme.colorScheme.background,
                         MaterialTheme.colorScheme.background
-                    )
+                    ),
+                    start = androidx.compose.ui.geometry.Offset.Zero,
+                    end = androidx.compose.ui.geometry.Offset.Infinite
                 )
             )
             .padding(horizontal = AppSpacing.lg, vertical = AppSpacing.md)
@@ -1491,17 +1500,22 @@ private fun ModernHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: Greeting and task count
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = stringResource(greetingResource),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    text = "Study cockpit",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                Spacer(modifier = Modifier.height(AppSpacing.xs))
+                Text(
+                    text = stringResource(greetingResource),
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.xs))
                 Text(
                     text = if (pendingCount > 0)
                         stringResource(R.string.tasks_pending, pendingCount)
@@ -1518,23 +1532,20 @@ private fun ModernHeader(
                 )
             }
 
-            // Right: Circular Progress + Search
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(AppSpacing.md)
             ) {
-                // Circular Progress Ring
                 CircularProgressRing(
                     progress = progress.progressPercentage,
                     completed = progress.completedToday,
                     total = progress.totalDueToday
                 )
 
-                // Search Icon Button
                 Surface(
                     modifier = Modifier.size(48.dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 2.dp,
                     onClick = onSearchClick
                 ) {
@@ -1551,6 +1562,59 @@ private fun ModernHeader(
                     }
                 }
             }
+        }
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            HeaderStatChip(
+                modifier = Modifier.weight(1f),
+                label = "Reviewed",
+                value = "${progress.completedToday}"
+            )
+            HeaderStatChip(
+                modifier = Modifier.weight(1f),
+                label = "Scheduled",
+                value = "${progress.totalDueToday}"
+            )
+            HeaderStatChip(
+                modifier = Modifier.weight(1f),
+                label = "Pending",
+                value = "$pendingCount"
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeaderStatChip(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+        tonalElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = AppSpacing.sm, vertical = AppSpacing.sm),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.xxs))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }

@@ -13,7 +13,8 @@ import androidx.room.PrimaryKey
     tableName = "review_logs",
     indices = [
         Index(value = ["item_id"]),
-        Index(value = ["actual_review_time"])
+        Index(value = ["actual_review_time"]),
+        Index(value = ["actual_review_time", "grade", "item_id"])
     ]
 )
 data class ReviewLog(
@@ -44,25 +45,25 @@ data class ReviewLog(
     /**
      * Review grade: 1 = Again, 2 = Hard, 3 = Good, 4 = Easy.
      */
-    @ColumnInfo(name = "grade")
+    @ColumnInfo(name = "grade", defaultValue = "3")
     val grade: Int = ReviewGrade.GOOD,
 
     /**
      * User response time in milliseconds.
      */
-    @ColumnInfo(name = "response_ms")
+    @ColumnInfo(name = "response_ms", defaultValue = "0")
     val responseMs: Long = 0L,
 
     /**
      * actual_review_time - planned_review_time in milliseconds.
      */
-    @ColumnInfo(name = "due_delta_ms")
+    @ColumnInfo(name = "due_delta_ms", defaultValue = "0")
     val dueDeltaMs: Long = 0L,
 
     /**
      * Scheduler algorithm version.
      */
-    @ColumnInfo(name = "scheduler_version")
+    @ColumnInfo(name = "scheduler_version", defaultValue = "'v2'")
     val schedulerVersion: String = "v2"
 )
 

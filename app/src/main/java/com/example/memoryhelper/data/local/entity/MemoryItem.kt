@@ -39,7 +39,8 @@ object MemoryItemStatus {
     indices = [
         Index(value = ["next_review_time"]),
         Index(value = ["curve_id"]),
-        Index(value = ["notebook_id"])
+        Index(value = ["notebook_id"]),
+        Index(value = ["next_review_time", "status", "notebook_id"])
     ]
 )
 data class MemoryItem(
@@ -100,26 +101,26 @@ data class MemoryItem(
     /**
      * Card presentation type: basic, cloze, qa.
      */
-    @ColumnInfo(name = "card_type")
+    @ColumnInfo(name = "card_type", defaultValue = "'basic'")
     val cardType: String = "basic",
 
     /**
      * JSON array of media references.
      * Example: [{"uri":"content://...","type":"image","durationMs":0}]
      */
-    @ColumnInfo(name = "media_refs")
+    @ColumnInfo(name = "media_refs", defaultValue = "'[]'")
     val mediaRefs: String = "[]",
 
     /**
      * Source of this card: manual, csv_import, anki_import, ai_generated.
      */
-    @ColumnInfo(name = "source_type")
+    @ColumnInfo(name = "source_type", defaultValue = "'manual'")
     val sourceType: String = "manual",
 
     /**
      * Last update timestamp (milliseconds).
      */
-    @ColumnInfo(name = "updated_at")
+    @ColumnInfo(name = "updated_at", defaultValue = "0")
     val updatedAt: Long = System.currentTimeMillis(),
 
     /**

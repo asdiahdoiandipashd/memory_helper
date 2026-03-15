@@ -24,17 +24,11 @@ import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
 
-/**
- * Permission status data class
- */
 data class PermissionStatus(
     val isGranted: Boolean,
-    val isRequired: Boolean = true  // Some permissions are only required on certain API levels
+    val isRequired: Boolean = true
 )
 
-/**
- * Backup result data class
- */
 data class BackupResult(
     val success: Boolean,
     val message: String,
@@ -42,18 +36,12 @@ data class BackupResult(
     val format: BackupFormat? = null
 )
 
-/**
- * Restore result data class
- */
 data class RestoreResult(
     val success: Boolean,
     val message: String,
     val importResult: ImportResult? = null
 )
 
-/**
- * Settings UI state
- */
 data class SettingsUiState(
     val notificationPermission: PermissionStatus = PermissionStatus(false, false),
     val exactAlarmPermission: PermissionStatus = PermissionStatus(false, false),
@@ -79,9 +67,6 @@ class SettingsViewModel @Inject constructor(
         refreshAllPermissions()
     }
 
-    /**
-     * Refreshes all permission statuses
-     */
     fun refreshAllPermissions() {
         _uiState.update { currentState ->
             currentState.copy(
@@ -92,9 +77,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Check notification permission status
-     */
     private fun checkNotificationPermission(): PermissionStatus {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val isGranted = ContextCompat.checkSelfPermission(
@@ -103,57 +85,40 @@ class SettingsViewModel @Inject constructor(
             ) == PackageManager.PERMISSION_GRANTED
             PermissionStatus(isGranted = isGranted, isRequired = true)
         } else {
-            // Check if notifications are enabled via NotificationManager for older versions
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             PermissionStatus(isGranted = notificationManager.areNotificationsEnabled(), isRequired = true)
         }
     }
 
-    /**
-     * Check exact alarm permission status (Android 12+)
-     */
     private fun checkExactAlarmPermission(): PermissionStatus {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
             val isGranted = alarmManager?.canScheduleExactAlarms() == true
             PermissionStatus(isGranted = isGranted, isRequired = true)
         } else {
-            // Not required before Android 12
             PermissionStatus(isGranted = true, isRequired = false)
         }
     }
 
-    /**
-     * Check if app is whitelisted from battery optimization
-     */
     private fun checkBatteryOptimization(): PermissionStatus {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
         val isIgnoring = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
         return PermissionStatus(isGranted = isIgnoring, isRequired = true)
     }
 
-    /**
-     * Marks that test notification was sent (for UI feedback)
-     */
     fun onTestNotificationSent() {
         _uiState.update { it.copy(isTestNotificationSent = true) }
     }
 
-    /**
-     * Resets the test notification sent flag
-     */
     fun resetTestNotificationFlag() {
         _uiState.update { it.copy(isTestNotificationSent = false) }
     }
 
-    /**
-     * Export data to JSON format
-     */
     suspend fun exportToJson(outputStream: OutputStream) {
         _uiState.update { it.copy(backupInProgress = true, backupResult = null) }
-        
+
         val result = backupService.exportToJson(outputStream)
-        
+
         _uiState.update { currentState ->
             val fileName = backupService.generateBackupFileName(BackupFormat.JSON)
             currentState.copy(
@@ -161,28 +126,25 @@ class SettingsViewModel @Inject constructor(
                 backupResult = if (result.isSuccess) {
                     BackupResult(
                         success = true,
-                        message = "数据备份成功",
+                        message = "JSON backup completed successfully.",
                         fileName = fileName,
                         format = BackupFormat.JSON
                     )
                 } else {
                     BackupResult(
                         success = false,
-                        message = "备份失败: ${result.exceptionOrNull()?.message ?: "未知错误"}"
+                        message = "Backup failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
                     )
                 }
             )
         }
     }
 
-    /**
-     * Export data to CSV format
-     */
     suspend fun exportToCsv(outputStream: OutputStream) {
         _uiState.update { it.copy(backupInProgress = true, backupResult = null) }
-        
+
         val result = backupService.exportToCsv(outputStream)
-        
+
         _uiState.update { currentState ->
             val fileName = backupService.generateBackupFileName(BackupFormat.CSV)
             currentState.copy(
@@ -190,28 +152,25 @@ class SettingsViewModel @Inject constructor(
                 backupResult = if (result.isSuccess) {
                     BackupResult(
                         success = true,
-                        message = "CSV导出成功",
+                        message = "CSV export completed successfully.",
                         fileName = fileName,
                         format = BackupFormat.CSV
                     )
                 } else {
                     BackupResult(
                         success = false,
-                        message = "CSV导出失败: ${result.exceptionOrNull()?.message ?: "未知错误"}"
+                        message = "CSV export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
                     )
                 }
             )
         }
     }
 
-    /**
-     * Import data from JSON backup
-     */
     suspend fun importFromJson(inputStream: InputStream) {
         _uiState.update { it.copy(restoreInProgress = true, restoreResult = null) }
-        
+
         val result = backupService.importFromJson(inputStream)
-        
+
         _uiState.update { currentState ->
             currentState.copy(
                 restoreInProgress = false,
@@ -220,19 +179,19 @@ class SettingsViewModel @Inject constructor(
                     RestoreResult(
                         success = importResult?.success ?: false,
                         message = if (importResult?.success == true) {
-                            "成功导入 ${importResult.itemsImported} 个记忆条目，" +
-                            "${importResult.notebooksImported} 个记忆本，" +
-                            "${importResult.curvesImported} 个复习曲线，" +
-                            "${importResult.logsImported} 条复习记录"
+                            "Imported ${importResult.itemsImported} items, " +
+                                "${importResult.notebooksImported} notebooks, " +
+                                "${importResult.curvesImported} curves, and " +
+                                "${importResult.logsImported} review logs."
                         } else {
-                            "导入失败: 没有数据被导入"
+                            "Import failed: no data was restored."
                         },
                         importResult = importResult
                     )
                 } else {
                     RestoreResult(
                         success = false,
-                        message = "导入失败: ${result.exceptionOrNull()?.message ?: "未知错误"}"
+                        message = "Import failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
                     )
                 }
             )
@@ -301,30 +260,18 @@ class SettingsViewModel @Inject constructor(
         )
     }
 
-    /**
-     * Clear backup result
-     */
     fun clearBackupResult() {
         _uiState.update { it.copy(backupResult = null) }
     }
 
-    /**
-     * Clear restore result
-     */
     fun clearRestoreResult() {
         _uiState.update { it.copy(restoreResult = null) }
     }
 
-    /**
-     * Generate backup file name
-     */
     fun generateBackupFileName(format: BackupFormat): String {
         return backupService.generateBackupFileName(format)
     }
 
-    /**
-     * Get backup file MIME type
-     */
     fun getBackupMimeType(format: BackupFormat): String {
         return backupService.getMimeType(format)
     }

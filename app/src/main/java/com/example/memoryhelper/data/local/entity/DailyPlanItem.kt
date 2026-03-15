@@ -46,7 +46,8 @@ object DailyPlanStatus {
         Index(value = ["status"]),
         Index(value = ["exam_plan_id"]),
         Index(value = ["memory_item_id"]),
-        Index(value = ["exam_subject_id"])
+        Index(value = ["exam_subject_id"]),
+        Index(value = ["plan_date", "priority", "status"])
     ]
 )
 data class DailyPlanItem(

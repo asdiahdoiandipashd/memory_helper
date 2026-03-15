@@ -26,40 +26,34 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.memoryhelper.MemoryHelperApplication
-import com.example.memoryhelper.R
 import com.example.memoryhelper.ui.designsystem.AppCard
 import com.example.memoryhelper.ui.designsystem.AppCardTone
 import com.example.memoryhelper.ui.designsystem.AppSpacing
 import com.example.memoryhelper.ui.designsystem.AppTopBar
 import com.example.memoryhelper.ui.designsystem.PrimaryButton
 import com.example.memoryhelper.ui.designsystem.SecondaryButton
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,26 +64,21 @@ fun SettingsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    // Notification permission launcher for Android 13+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) {
         viewModel.refreshAllPermissions()
     }
 
-    // Refresh permissions when screen resumes (user might have changed settings)
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             viewModel.refreshAllPermissions()
         }
     }
 
-    // Show snackbar when test notification is sent
     LaunchedEffect(uiState.isTestNotificationSent) {
         if (uiState.isTestNotificationSent) {
-            snackbarHostState.showSnackbar("测试通知已发送")
+            snackbarHostState.showSnackbar("Test notification sent.")
             viewModel.resetTestNotificationFlag()
         }
     }
@@ -97,7 +86,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = { Text("设置") }
+                title = { Text("Settings") }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -107,152 +96,208 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(AppSpacing.lg),
+                .padding(horizontal = AppSpacing.lg, vertical = AppSpacing.md),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.lg)
         ) {
-            // Section header
-            Text(
-                text = "权限管理",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+            ReliabilityHeroCard(uiState = uiState)
+
+            SectionTitle(
+                title = "Reliability controls",
+                supporting = "These switches decide whether review reminders can survive modern Android battery and alarm policies."
             )
 
-            Text(
-                text = "以下权限对于准时接收复习提醒至关重要",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Permission cards
-            AppCard(
-                modifier = Modifier.fillMaxWidth(),
-                tone = AppCardTone.Surface
-            ) {
-                    // 1. Notification Permission
-                    PermissionItem(
-                        title = "通知权限",
-                        description = "允许应用发送复习提醒通知",
-                        isGranted = uiState.notificationPermission.isGranted,
-                        onRequestPermission = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                // Open app notification settings for older versions
-                                openAppSettings(context)
-                            }
-                        }
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = AppSpacing.sm))
-
-                    // 2. Exact Alarm Permission
-                    PermissionItem(
-                        title = "精准闹钟",
-                        description = "允许应用在精确时间发送提醒",
-                        isGranted = uiState.exactAlarmPermission.isGranted,
-                        isRequired = uiState.exactAlarmPermission.isRequired,
-                        onRequestPermission = {
-                            openExactAlarmSettings(context)
-                        }
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = AppSpacing.sm))
-
-                    // 3. Battery Optimization Whitelist (CRUCIAL)
-                    PermissionItem(
-                        title = "后台运行白名单",
-                        description = "防止系统在后台关闭应用导致提醒失效。这是最重要的权限！",
-                        isGranted = uiState.batteryOptimizationWhitelisted.isGranted,
-                        buttonText = if (uiState.batteryOptimizationWhitelisted.isGranted) "已加入" else "申请白名单",
-                        isCritical = true,
-                        onRequestPermission = {
-                            requestBatteryOptimizationWhitelist(context)
-                        }
-                    )
-            }
-
-            Spacer(modifier = Modifier.height(AppSpacing.sm))
-
-            // Section header for testing
-            Text(
-                text = "测试",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            // Test notification card
-            AppCard(
-                modifier = Modifier.fillMaxWidth(),
-                tone = AppCardTone.Surface
-            ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Notifications,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(AppSpacing.sm))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "测试通知",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "立即发送一条测试通知，验证通知渠道是否正常工作",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+            PermissionItem(
+                title = "Notifications",
+                description = "Allow the app to surface due review reminders and result feedback.",
+                isGranted = uiState.notificationPermission.isGranted,
+                onRequestPermission = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        openAppNotificationSettings(context)
                     }
+                }
+            )
 
-                    Spacer(modifier = Modifier.height(AppSpacing.sm))
+            PermissionItem(
+                title = "Exact alarms",
+                description = "Required for precise reminder timing on Android 12 and above.",
+                isGranted = uiState.exactAlarmPermission.isGranted,
+                isRequired = uiState.exactAlarmPermission.isRequired,
+                onRequestPermission = { openExactAlarmSettings(context) }
+            )
 
-                    PrimaryButton(
-                        text = "发送测试通知",
-                        onClick = {
-                            sendTestNotification(context)
-                            viewModel.onTestNotificationSent()
-                        },
-                        modifier = Modifier.fillMaxWidth()
+            PermissionItem(
+                title = "Battery protection whitelist",
+                description = "Prevents the system from suspending background reminder delivery. This is the most critical control.",
+                isGranted = uiState.batteryOptimizationWhitelisted.isGranted,
+                isCritical = true,
+                buttonText = if (uiState.batteryOptimizationWhitelisted.isGranted) "Protected" else "Protect app",
+                onRequestPermission = { requestBatteryOptimizationWhitelist(context) }
+            )
+
+            SectionTitle(
+                title = "Diagnostics",
+                supporting = "Use this before blaming the scheduler. It verifies that the notification channel still reaches the device."
+            )
+
+            AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                tone = AppCardTone.Surface
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Rounded.Notifications,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
                     )
+                    Spacer(modifier = Modifier.width(AppSpacing.sm))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Send a live test notification",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                        Text(
+                            text = "If this fails, reminder delivery is blocked at the device or channel level, not inside the review flow.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(AppSpacing.md))
+
+                PrimaryButton(
+                    text = "Send test notification",
+                    onClick = {
+                        sendTestNotification(context)
+                        viewModel.onTestNotificationSent()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            Spacer(modifier = Modifier.height(AppSpacing.sm))
-
-            // Backup & Restore Section
             BackupRestoreSection(viewModel = viewModel)
 
-            Spacer(modifier = Modifier.height(AppSpacing.sm))
-
-            // Tips section
-            Text(
-                text = "提示",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+            SectionTitle(
+                title = "Keep it stable",
+                supporting = "These are the device-level habits that matter most when reminders feel unreliable."
             )
 
             AppCard(
                 modifier = Modifier.fillMaxWidth(),
                 tone = AppCardTone.Elevated
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(AppSpacing.xs)
-                ) {
-                    TipItem("部分手机厂商（如小米、华为、OPPO）有额外的后台管理设置，请在系统设置中将本应用设为「允许后台运行」")
-                    TipItem("如果通知仍然不稳定，请尝试关闭系统的「省电模式」或将本应用添加到省电白名单")
-                    TipItem("确保通知声音和振动未被静音")
-                    TipItem("定期备份数据，防止意外丢失重要记忆内容")
+                Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)) {
+                    TipItem(text = "On Xiaomi, Huawei, OPPO and similar OEM skins, manually allow background activity for Memory Helper.")
+                    TipItem(text = "If reminders still drift, disable aggressive battery saver rules for this app.")
+                    TipItem(text = "Check that notification sound, vibration, and channel alerts were not muted by the system.")
+                    TipItem(text = "Export JSON backups before large imports or device migration.")
                 }
             }
 
-            Spacer(modifier = Modifier.height(AppSpacing.lg))
+            Spacer(modifier = Modifier.height(AppSpacing.sm))
         }
+    }
+}
+
+@Composable
+private fun ReliabilityHeroCard(
+    uiState: SettingsUiState
+) {
+    AppCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = AppCardTone.Accent
+    ) {
+        Text(
+            text = "Reminder cockpit",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f)
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xs))
+        Text(
+            text = "Protect the delivery path",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xs))
+        Text(
+            text = "A perfect SRS schedule still fails if Android suppresses alerts. Keep these three controls green before judging review timing.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            HeroStatusChip(
+                modifier = Modifier.weight(1f),
+                label = "Alerts",
+                ready = uiState.notificationPermission.isGranted
+            )
+            HeroStatusChip(
+                modifier = Modifier.weight(1f),
+                label = "Alarm",
+                ready = uiState.exactAlarmPermission.isGranted || !uiState.exactAlarmPermission.isRequired
+            )
+            HeroStatusChip(
+                modifier = Modifier.weight(1f),
+                label = "Battery",
+                ready = uiState.batteryOptimizationWhitelisted.isGranted
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroStatusChip(
+    label: String,
+    ready: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = AppSpacing.sm, vertical = AppSpacing.sm),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.xxs)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f)
+            )
+            Text(
+                text = if (ready) "Ready" else "Check",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(
+    title: String,
+    supporting: String
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.xxs)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = supporting,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -263,71 +308,84 @@ private fun PermissionItem(
     isGranted: Boolean,
     isRequired: Boolean = true,
     isCritical: Boolean = false,
-    buttonText: String = if (isGranted) "已授权" else "去设置",
+    buttonText: String = if (isGranted) "Granted" else "Review setting",
     onRequestPermission: () -> Unit
 ) {
-    Row(
+    AppCard(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top
+        tone = if (isCritical && !isGranted) AppCardTone.Accent else AppCardTone.Surface
     ) {
-        // Status icon
-        Icon(
-            imageVector = if (isGranted) Icons.Rounded.CheckCircle else Icons.Rounded.Warning,
-            contentDescription = null,
-            tint = when {
-                isGranted -> MaterialTheme.colorScheme.tertiary
-                isCritical -> MaterialTheme.colorScheme.error
-                else -> MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-            },
-            modifier = Modifier.size(24.dp)
-        )
-
-        Spacer(modifier = Modifier.width(AppSpacing.sm))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                if (isCritical && !isGranted) {
-                    Spacer(modifier = Modifier.width(AppSpacing.xs))
-                    Text(
-                        text = "重要",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(AppSpacing.xxs))
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            Icon(
+                imageVector = if (isGranted) Icons.Rounded.CheckCircle else Icons.Rounded.Warning,
+                contentDescription = null,
+                tint = when {
+                    isGranted -> MaterialTheme.colorScheme.tertiary
+                    isCritical -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.primary
+                },
+                modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.height(AppSpacing.xs))
 
-            if (isRequired) {
-                if (isGranted) {
-                    SecondaryButton(
-                        text = buttonText,
-                        onClick = onRequestPermission,
-                        enabled = false
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
-                } else {
-                    PrimaryButton(
-                        text = buttonText,
-                        onClick = onRequestPermission
-                    )
+                    if (isCritical && !isGranted) {
+                        Spacer(modifier = Modifier.width(AppSpacing.xs))
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.errorContainer
+                        ) {
+                            Text(
+                                text = "Critical",
+                                modifier = Modifier.padding(horizontal = AppSpacing.xs, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
-            } else {
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
                 Text(
-                    text = "当前系统版本无需此权限",
+                    text = description,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(modifier = Modifier.height(AppSpacing.sm))
+
+                when {
+                    !isRequired -> {
+                        Text(
+                            text = "This Android version does not require the setting.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    isGranted -> {
+                        SecondaryButton(
+                            text = buttonText,
+                            onClick = onRequestPermission,
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    else -> {
+                        PrimaryButton(
+                            text = buttonText,
+                            onClick = onRequestPermission,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
             }
         }
     }
@@ -335,34 +393,31 @@ private fun PermissionItem(
 
 @Composable
 private fun TipItem(text: String) {
-    Row {
+    Row(
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
+    ) {
         Text(
-            text = "•",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
+            text = "Tip",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
         )
-        Spacer(modifier = Modifier.width(AppSpacing.xs))
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
-/**
- * Opens the app notification settings
- */
-private fun openAppSettings(context: Context) {
+private fun openAppNotificationSettings(context: Context) {
     val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
         putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
     }
     context.startActivity(intent)
 }
 
-/**
- * Opens the exact alarm settings (Android 12+)
- */
 private fun openExactAlarmSettings(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val intent = Intent(
@@ -373,9 +428,6 @@ private fun openExactAlarmSettings(context: Context) {
     }
 }
 
-/**
- * Requests battery optimization whitelist using the system dialog
- */
 private fun requestBatteryOptimizationWhitelist(context: Context) {
     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
         data = Uri.parse("package:${context.packageName}")
@@ -383,23 +435,20 @@ private fun requestBatteryOptimizationWhitelist(context: Context) {
     context.startActivity(intent)
 }
 
-/**
- * Sends a test notification to verify the notification channel is working
- */
 private fun sendTestNotification(context: Context) {
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    val notification = NotificationCompat.Builder(
+    val notification = androidx.core.app.NotificationCompat.Builder(
         context,
         MemoryHelperApplication.REVIEW_CHANNEL_ID
     )
         .setSmallIcon(android.R.drawable.ic_popup_reminder)
-        .setContentTitle("测试通知")
-        .setContentText("恭喜！通知功能正常工作。")
-        .setPriority(NotificationCompat.PRIORITY_HIGH)
-        .setCategory(NotificationCompat.CATEGORY_REMINDER)
+        .setContentTitle("Memory Helper test notification")
+        .setContentText("Notifications are reaching the device correctly.")
+        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+        .setCategory(androidx.core.app.NotificationCompat.CATEGORY_REMINDER)
         .setAutoCancel(true)
-        .setDefaults(NotificationCompat.DEFAULT_ALL)
+        .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL)
         .build()
 
     notificationManager.notify(9999, notification)
