@@ -5,6 +5,7 @@ import com.example.memoryhelper.data.local.dao.DailyPlanRow
 import com.example.memoryhelper.data.local.dao.ExamPlanDao
 import com.example.memoryhelper.data.local.dao.ExamSubjectDao
 import com.example.memoryhelper.data.local.dao.MemoryItemDao
+import com.example.memoryhelper.data.local.entity.DailyPlanStatus
 import com.example.memoryhelper.data.local.entity.DailyPlanItem
 import com.example.memoryhelper.data.local.entity.ExamPlan
 import com.example.memoryhelper.data.local.entity.ExamSubject
@@ -15,6 +16,16 @@ import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+
+data class ActivePlanProgress(
+    val planId: Long,
+    val planName: String,
+    val doneCount: Int,
+    val totalCount: Int
+) {
+    val completionRate: Float
+        get() = if (totalCount == 0) 0f else doneCount.toFloat() / totalCount.toFloat()
+}
 
 @Singleton
 class ExamPlanRepository @Inject constructor(
@@ -102,4 +113,28 @@ class ExamPlanRepository @Inject constructor(
     suspend fun getActivePlan(): ExamPlan? = examPlanDao.getActivePlan()
 
     fun getSubjectsFlow(planId: Long): Flow<List<ExamSubject>> = examSubjectDao.getByPlanFlow(planId)
+
+    suspend fun markTodayPlanItemDone(memoryItemId: Long, dateEpochDay: Long = LocalDate.now().toEpochDay()) {
+        dailyPlanItemDao.updateStatusForMemoryItem(
+            planDate = dateEpochDay,
+            memoryItemId = memoryItemId,
+            status = DailyPlanStatus.DONE
+        )
+    }
+
+    suspend fun getActivePlanProgress(dateEpochDay: Long = LocalDate.now().toEpochDay()): ActivePlanProgress? {
+        val activePlan = examPlanDao.getActivePlan() ?: return null
+        val totalCount = dailyPlanItemDao.countByPlanAndDate(activePlan.id, dateEpochDay)
+        val doneCount = dailyPlanItemDao.countByPlanDateAndStatus(
+            planId = activePlan.id,
+            planDate = dateEpochDay,
+            status = DailyPlanStatus.DONE
+        )
+        return ActivePlanProgress(
+            planId = activePlan.id,
+            planName = activePlan.name,
+            doneCount = doneCount,
+            totalCount = totalCount
+        )
+    }
 }

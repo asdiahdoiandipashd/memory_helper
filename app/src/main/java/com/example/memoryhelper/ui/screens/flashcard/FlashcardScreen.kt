@@ -1,5 +1,7 @@
 package com.example.memoryhelper.ui.screens.flashcard
 
+import android.media.MediaPlayer
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -14,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,14 +25,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -55,10 +63,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.memoryhelper.R
 import com.example.memoryhelper.data.local.entity.MemoryItem
 import com.example.memoryhelper.ui.theme.ErrorCoral
@@ -66,6 +77,10 @@ import com.example.memoryhelper.ui.theme.GradientPrimaryEnd
 import com.example.memoryhelper.ui.theme.GradientPrimaryStart
 import com.example.memoryhelper.ui.theme.PrimaryBlue
 import com.example.memoryhelper.ui.theme.SuccessGreen
+import java.io.File
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 @Composable
 fun FlashcardScreen(
@@ -293,6 +308,7 @@ private fun FlashcardView(
             } else {
                 // Back: Content (Answer) - mirrored to appear correctly
                 BackContent(
+                    item = item,
                     content = item.content,
                     modifier = Modifier.graphicsLayer { rotationY = 180f }
                 )
@@ -347,12 +363,24 @@ private fun FrontContent(title: String) {
  */
 @Composable
 private fun BackContent(
+    item: MemoryItem,
     content: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val mediaRefs = remember(item.mediaRefs, item.imagePaths) { parseMediaRefs(item) }
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            mediaPlayer?.release()
+            mediaPlayer = null
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Top,
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
@@ -385,6 +413,124 @@ private fun BackContent(
             color = MaterialTheme.colorScheme.onSurface,
             lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.4
         )
+
+        if (mediaRefs.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            MediaContentSection(
+                mediaRefs = mediaRefs,
+                onPlayAudio = { ref ->
+                    runCatching {
+                        mediaPlayer?.release()
+                        mediaPlayer = MediaPlayer().apply {
+                            setDataSource(context, ref.asUri())
+                            setOnCompletionListener {
+                                it.release()
+                                mediaPlayer = null
+                            }
+                            prepare()
+                            start()
+                        }
+                    }.onFailure {
+                        mediaPlayer?.release()
+                        mediaPlayer = null
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun MediaContentSection(
+    mediaRefs: List<FlashcardMediaRef>,
+    onPlayAudio: (FlashcardMediaRef) -> Unit
+) {
+    val imageRefs = mediaRefs.filter { it.type == "image" }
+    val audioRefs = mediaRefs.filter { it.type == "audio" }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (imageRefs.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(imageRefs) { ref ->
+                    ElevatedCard(
+                        modifier = Modifier
+                            .width(220.dp)
+                            .height(160.dp),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        AsyncImage(
+                            model = ref.imageModel(),
+                            contentDescription = ref.sourceName ?: "Card image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+            }
+        }
+
+        if (audioRefs.isNotEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                audioRefs.forEachIndexed { index, ref ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        color = PrimaryBlue.copy(alpha = 0.1f),
+                        onClick = { onPlayAudio(ref) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = PrimaryBlue
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = ref.sourceName ?: "Audio ${index + 1}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Tap to play",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = null,
+                                tint = PrimaryBlue
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -576,3 +722,43 @@ private fun CompletionScreen(
         }
     }
 }
+
+private fun parseMediaRefs(item: MemoryItem): List<FlashcardMediaRef> {
+    val json = Json { ignoreUnknownKeys = true }
+
+    val structuredRefs = runCatching {
+        json.decodeFromString<List<FlashcardMediaRef>>(item.mediaRefs)
+            .filter { it.uri.isNotBlank() }
+    }.getOrDefault(emptyList())
+
+    if (structuredRefs.isNotEmpty()) {
+        return structuredRefs
+    }
+
+    return runCatching {
+        json.decodeFromString<List<String>>(item.imagePaths)
+            .filter { it.isNotBlank() }
+            .map { path ->
+                FlashcardMediaRef(
+                    uri = path,
+                    type = "image"
+                )
+            }
+    }.getOrDefault(emptyList())
+}
+
+private fun FlashcardMediaRef.imageModel(): Any {
+    return if (uri.startsWith("content://")) Uri.parse(uri) else File(uri)
+}
+
+private fun FlashcardMediaRef.asUri(): Uri {
+    return if (uri.startsWith("content://")) Uri.parse(uri) else Uri.fromFile(File(uri))
+}
+
+@Serializable
+private data class FlashcardMediaRef(
+    val uri: String,
+    val type: String,
+    val durationMs: Long = 0L,
+    val sourceName: String? = null
+)

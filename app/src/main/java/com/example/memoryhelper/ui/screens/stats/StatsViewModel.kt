@@ -2,6 +2,8 @@ package com.example.memoryhelper.ui.screens.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.memoryhelper.data.repository.ActivePlanProgress
+import com.example.memoryhelper.data.repository.ExamPlanRepository
 import com.example.memoryhelper.data.repository.MemoryRepository
 import com.example.memoryhelper.domain.scheduler.ReviewGradeOption
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,12 +36,14 @@ data class StatsUiState(
     val overdueReviews: Int = 0,
     val overdueRate: Float = 0f,
     val averageResponseMs: Long = 0L,
-    val gradeBreakdown: List<GradeBreakdownUi> = emptyList()
+    val gradeBreakdown: List<GradeBreakdownUi> = emptyList(),
+    val activePlanProgress: ActivePlanProgress? = null
 )
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
-    private val repository: MemoryRepository
+    private val repository: MemoryRepository,
+    private val examPlanRepository: ExamPlanRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StatsUiState())
@@ -55,6 +59,7 @@ class StatsViewModel @Inject constructor(
 
             val reviewCounts = repository.getReviewCountsForLast7Days()
             val summary = repository.getReviewStatsSummaryForLast7Days()
+            val activePlanProgress = examPlanRepository.getActivePlanProgress()
 
             // Convert to ordered list of ChartDataPoint
             val chartData = reviewCounts.entries
@@ -74,7 +79,8 @@ class StatsViewModel @Inject constructor(
                 overdueReviews = summary.overdueReviews,
                 overdueRate = summary.overdueRate,
                 averageResponseMs = summary.averageResponseMs,
-                gradeBreakdown = gradeBreakdown
+                gradeBreakdown = gradeBreakdown,
+                activePlanProgress = activePlanProgress
             )
         }
     }

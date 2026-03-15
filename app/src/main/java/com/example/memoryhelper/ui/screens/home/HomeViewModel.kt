@@ -58,12 +58,6 @@ data class HomeUiState(
     val allItems: List<MemoryItem>
         get() = overdueItems + todayItems + upcomingItems + completedItems
 
-    val totalDueNow: Int
-        get() = overdueItems.size + todayItems.count { it.nextReviewTime <= System.currentTimeMillis() }
-
-    val hasAnyDueItems: Boolean
-        get() = overdueItems.isNotEmpty() || todayItems.any { it.nextReviewTime <= System.currentTimeMillis() }
-
     val isEmpty: Boolean
         get() = allItems.isEmpty()
 }

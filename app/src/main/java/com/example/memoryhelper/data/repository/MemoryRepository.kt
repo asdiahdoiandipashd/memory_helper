@@ -1,10 +1,12 @@
 package com.example.memoryhelper.data.repository
 
 import com.example.memoryhelper.alarm.AlarmScheduler
+import com.example.memoryhelper.data.local.dao.DailyPlanItemDao
 import com.example.memoryhelper.data.local.dao.MemoryItemDao
 import com.example.memoryhelper.data.local.dao.NotebookDao
 import com.example.memoryhelper.data.local.dao.ReviewCurveDao
 import com.example.memoryhelper.data.local.dao.ReviewLogDao
+import com.example.memoryhelper.data.local.entity.DailyPlanStatus
 import com.example.memoryhelper.data.local.entity.MemoryItem
 import com.example.memoryhelper.data.local.entity.MemoryItemStatus
 import com.example.memoryhelper.data.local.entity.ReviewAction
@@ -38,6 +40,7 @@ class MemoryRepository @Inject constructor(
     private val memoryItemDao: MemoryItemDao,
     private val reviewLogDao: ReviewLogDao,
     private val notebookDao: NotebookDao,
+    private val dailyPlanItemDao: DailyPlanItemDao,
     private val alarmScheduler: AlarmScheduler,
     private val schedulerEngine: SchedulerEngine
 ) {
@@ -218,6 +221,11 @@ class MemoryRepository @Inject constructor(
             updatedAt = now
         )
         memoryItemDao.update(updatedItem)
+        dailyPlanItemDao.updateStatusForMemoryItem(
+            planDate = java.time.LocalDate.now().toEpochDay(),
+            memoryItemId = item.id,
+            status = DailyPlanStatus.DONE
+        )
         alarmScheduler.scheduleNextAlarm()
     }
 

@@ -29,6 +29,12 @@ interface DailyPlanItemDao {
     @Query("SELECT COUNT(*) FROM daily_plan_item WHERE exam_plan_id = :planId AND plan_date = :planDate")
     suspend fun countByPlanAndDate(planId: Long, planDate: Long): Int
 
+    @Query("SELECT COUNT(*) FROM daily_plan_item WHERE exam_plan_id = :planId AND plan_date = :planDate AND status = :status")
+    suspend fun countByPlanDateAndStatus(planId: Long, planDate: Long, status: Int): Int
+
+    @Query("UPDATE daily_plan_item SET status = :status WHERE plan_date = :planDate AND memory_item_id = :memoryItemId")
+    suspend fun updateStatusForMemoryItem(planDate: Long, memoryItemId: Long, status: Int): Int
+
     @Query(
         """
         SELECT

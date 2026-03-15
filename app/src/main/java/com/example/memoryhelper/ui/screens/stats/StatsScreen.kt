@@ -94,6 +94,10 @@ fun StatsScreen(
 
                     MetricsOverviewCard(uiState = uiState)
 
+                    uiState.activePlanProgress?.let { progress ->
+                        PlanCompletionCard(progress = progress)
+                    }
+
                     AppCard(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -131,6 +135,49 @@ fun StatsScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PlanCompletionCard(
+    progress: com.example.memoryhelper.data.repository.ActivePlanProgress
+) {
+    AppCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = AppCardTone.Surface
+    ) {
+        Text(
+            text = "Today Plan Completion",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.sm))
+        Text(
+            text = progress.planName,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.xs))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "${progress.doneCount}/${progress.totalCount} completed",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = formatPercent(progress.completionRate),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Spacer(modifier = Modifier.height(AppSpacing.sm))
+        LinearProgressIndicator(
+            progress = { progress.completionRate.coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -241,7 +288,7 @@ private fun GradeDistributionCard(
                             )
                         }
                         LinearProgressIndicator(
-                            progress = ratio.coerceIn(0f, 1f),
+                            progress = { ratio.coerceIn(0f, 1f) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
