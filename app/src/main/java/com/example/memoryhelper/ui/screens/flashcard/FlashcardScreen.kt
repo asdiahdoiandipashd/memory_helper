@@ -1,4 +1,4 @@
-package com.example.memoryhelper.ui.screens.flashcard
+﻿package com.example.memoryhelper.ui.screens.flashcard
 
 import android.media.MediaPlayer
 import android.net.Uri
@@ -36,10 +36,9 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -58,20 +57,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.memoryhelper.R
 import com.example.memoryhelper.data.local.entity.MemoryItem
+import com.example.memoryhelper.ui.designsystem.PrimaryButton
 import com.example.memoryhelper.ui.theme.ErrorCoral
 import com.example.memoryhelper.ui.theme.GradientPrimaryEnd
 import com.example.memoryhelper.ui.theme.GradientPrimaryStart
@@ -91,20 +88,21 @@ fun FlashcardScreen(
     onEasy: (MemoryItem, Long) -> Unit,
     onComplete: () -> Unit
 ) {
+    val sessionItems = remember { items.toList() }
     var currentIndex by remember { mutableIntStateOf(0) }
     var isFlipped by remember { mutableStateOf(false) }
     var cardStartedAt by remember(currentIndex) { mutableLongStateOf(System.currentTimeMillis()) }
 
-    if (currentIndex >= items.size) {
+    if (currentIndex >= sessionItems.size) {
         CompletionScreen(
-            totalReviewed = items.size,
+            totalReviewed = sessionItems.size,
             onDismiss = onComplete
         )
         return
     }
 
-    val currentItem = items[currentIndex]
-    val progress = (currentIndex + 1).toFloat() / items.size
+    val currentItem = sessionItems[currentIndex]
+    val progress = (currentIndex + 1).toFloat() / sessionItems.size
 
     // Immersive gradient background
     Box(
@@ -131,7 +129,7 @@ fun FlashcardScreen(
             // Progress Section - Top
             ProgressHeader(
                 currentIndex = currentIndex + 1,
-                total = items.size,
+                total = sessionItems.size,
                 progress = progress
             )
 
@@ -181,7 +179,7 @@ fun FlashcardScreen(
                 } else {
                     // Tap hint when not flipped
                     Text(
-                        text = stringResource(R.string.tap_to_flip),
+                        text = "\u70b9\u51fb\u5361\u7247\u67e5\u770b\u7b54\u6848",
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.padding(vertical = 36.dp)
@@ -213,7 +211,7 @@ private fun ProgressHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.flashcard_progress, currentIndex, total),
+                text = "\u590d\u4e60 $currentIndex / $total",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -338,8 +336,8 @@ private fun FrontContent(title: String) {
                 modifier = Modifier.fillMaxSize()
             ) {
                 Text(
-                    text = "?",
-                    style = MaterialTheme.typography.headlineLarge,
+                    text = "\u9898",
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryBlue
                 )
@@ -407,7 +405,7 @@ private fun BackContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = content.ifBlank { stringResource(R.string.no_content) },
+            text = content.ifBlank { "\u65e0\u5185\u5bb9" },
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurface,
@@ -510,13 +508,13 @@ private fun MediaContentSection(
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = ref.sourceName ?: "Audio ${index + 1}",
+                                    text = ref.sourceName ?: "\u97f3\u9891 ${index + 1}",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Tap to play",
+                                    text = "\u70b9\u51fb\u64ad\u653e",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -553,16 +551,18 @@ private fun ActionButtonsGrid(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             GradeActionButton(
-                label = stringResource(R.string.review_again),
+                modifier = Modifier.weight(1f),
+                label = "\u91cd\u6765",
                 color = ErrorCoral,
                 icon = Icons.Default.Close,
                 onClick = onAgain
             )
             GradeActionButton(
-                label = stringResource(R.string.review_hard),
+                modifier = Modifier.weight(1f),
+                label = "\u56f0\u96be",
                 color = Color(0xFFF6A623),
                 icon = Icons.Outlined.Refresh,
                 onClick = onHard
@@ -570,16 +570,18 @@ private fun ActionButtonsGrid(
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             GradeActionButton(
-                label = stringResource(R.string.review_good),
+                modifier = Modifier.weight(1f),
+                label = "\u8bb0\u4f4f",
                 color = SuccessGreen,
                 icon = Icons.Default.Check,
                 onClick = onGood
             )
             GradeActionButton(
-                label = stringResource(R.string.review_easy),
+                modifier = Modifier.weight(1f),
+                label = "\u8f7b\u677e",
                 color = PrimaryBlue,
                 icon = Icons.Default.CheckCircle,
                 onClick = onEasy
@@ -590,43 +592,61 @@ private fun ActionButtonsGrid(
 
 @Composable
 private fun GradeActionButton(
+    modifier: Modifier = Modifier,
     label: String,
     color: Color,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(22.dp),
+        color = color,
+        onClick = onClick
+    ) {
+        Row(
             modifier = Modifier
-                .size(72.dp)
-                .shadow(
-                    elevation = 10.dp,
-                    shape = CircleShape,
-                    clip = false
-                ),
-            shape = CircleShape,
-            color = color,
-            onClick = onClick
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.16f)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    modifier = Modifier.size(34.dp),
-                    tint = Color.White
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        modifier = Modifier.size(22.dp),
+                        tint = Color.White
+                    )
+                }
+            }
+            Column {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = when (label) {
+                        "\u91cd\u6765" -> "\u56de\u5230\u9996\u8f6e"
+                        "\u56f0\u96be" -> "\u5c0f\u6b65\u63a8\u8fdb"
+                        "\u8bb0\u4f4f" -> "\u6b63\u5e38\u63a8\u8fdb"
+                        else -> "\u62c9\u957f\u95f4\u9694"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.82f)
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold
-        )
     }
 }
 
@@ -663,19 +683,20 @@ private fun CompletionScreen(
                     .padding(40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Celebration emoji with background
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFFFFF9C4),
+                    color = SuccessGreen.copy(alpha = 0.12f),
                     modifier = Modifier.size(100.dp)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Text(
-                            text = "🎉",
-                            style = MaterialTheme.typography.displayLarge
+                        Icon(
+                            imageVector = Icons.Default.DoneAll,
+                            contentDescription = null,
+                            tint = SuccessGreen,
+                            modifier = Modifier.size(48.dp)
                         )
                     }
                 }
@@ -683,7 +704,7 @@ private fun CompletionScreen(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Text(
-                    text = stringResource(R.string.review_complete),
+                    text = "本轮复习完成",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -692,32 +713,18 @@ private fun CompletionScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = stringResource(R.string.reviewed_items, totalReviewed),
+                    text = "共复习 $totalReviewed 张卡片",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(36.dp))
 
-                Button(
+                PrimaryButton(
+                    text = "返回首页",
                     onClick = onDismiss,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryBlue
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp
-                    )
-                ) {
-                    Text(
-                        text = stringResource(R.string.back_to_home),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
@@ -762,3 +769,4 @@ private data class FlashcardMediaRef(
     val durationMs: Long = 0L,
     val sourceName: String? = null
 )
+

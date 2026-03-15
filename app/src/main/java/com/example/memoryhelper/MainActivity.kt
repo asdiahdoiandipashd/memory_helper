@@ -56,6 +56,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.memoryhelper.ui.screens.exam.ExamScreen
 import com.example.memoryhelper.ui.screens.flashcard.FlashcardScreen
@@ -96,6 +97,8 @@ class MainActivity : ComponentActivity() {
 private fun MainContent() {
     val context = LocalContext.current
     val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
 
     // Permission states
     var notificationPermissionGranted by remember {
@@ -133,87 +136,89 @@ private fun MainContent() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = {
-                        selectedTab = 0
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
-                        }
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Rounded.Home,
-                            contentDescription = stringResource(R.string.nav_home)
-                        )
-                    },
-                    label = { Text(stringResource(R.string.nav_home)) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = {
-                        selectedTab = 1
-                        navController.navigate(Screen.Exam.route) {
-                            popUpTo(Screen.Home.route)
-                        }
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Rounded.DateRange,
-                            contentDescription = stringResource(R.string.nav_exam)
-                        )
-                    },
-                    label = { Text(stringResource(R.string.nav_exam)) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = {
-                        selectedTab = 2
-                        navController.navigate(Screen.Todo.route) {
-                            popUpTo(Screen.Home.route)
-                        }
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Rounded.CheckCircle,
-                            contentDescription = stringResource(R.string.nav_todo)
-                        )
-                    },
-                    label = { Text(stringResource(R.string.nav_todo)) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 3,
-                    onClick = {
-                        selectedTab = 3
-                        navController.navigate(Screen.Stats.route) {
-                            popUpTo(Screen.Home.route)
-                        }
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_bar_chart),
-                            contentDescription = stringResource(R.string.nav_stats)
-                        )
-                    },
-                    label = { Text(stringResource(R.string.nav_stats)) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 4,
-                    onClick = {
-                        selectedTab = 4
-                        navController.navigate(Screen.Settings.route) {
-                            popUpTo(Screen.Home.route)
-                        }
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_settings),
-                            contentDescription = stringResource(R.string.nav_settings)
-                        )
-                    },
-                    label = { Text(stringResource(R.string.nav_settings)) }
-                )
+            if (currentRoute != Screen.Flashcard.route) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = {
+                            selectedTab = 0
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Home,
+                                contentDescription = stringResource(R.string.nav_home)
+                            )
+                        },
+                        label = { Text(stringResource(R.string.nav_home)) }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = {
+                            selectedTab = 1
+                            navController.navigate(Screen.Exam.route) {
+                                popUpTo(Screen.Home.route)
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.DateRange,
+                                contentDescription = stringResource(R.string.nav_exam)
+                            )
+                        },
+                        label = { Text(stringResource(R.string.nav_exam)) }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        onClick = {
+                            selectedTab = 2
+                            navController.navigate(Screen.Todo.route) {
+                                popUpTo(Screen.Home.route)
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.CheckCircle,
+                                contentDescription = stringResource(R.string.nav_todo)
+                            )
+                        },
+                        label = { Text(stringResource(R.string.nav_todo)) }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 3,
+                        onClick = {
+                            selectedTab = 3
+                            navController.navigate(Screen.Stats.route) {
+                                popUpTo(Screen.Home.route)
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_bar_chart),
+                                contentDescription = stringResource(R.string.nav_stats)
+                            )
+                        },
+                        label = { Text(stringResource(R.string.nav_stats)) }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 4,
+                        onClick = {
+                            selectedTab = 4
+                            navController.navigate(Screen.Settings.route) {
+                                popUpTo(Screen.Home.route)
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_settings),
+                                contentDescription = stringResource(R.string.nav_settings)
+                            )
+                        },
+                        label = { Text(stringResource(R.string.nav_settings)) }
+                    )
+                }
             }
         }
     ) { paddingValues ->
